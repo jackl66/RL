@@ -1,6 +1,6 @@
 import time
 import argparse as ap
-from classic_environment import classic_coppelia
+from environment_classic import classic_coppelia
 import matplotlib.pyplot as plt
 
 # ************** DDPG *******************
