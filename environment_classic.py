@@ -116,13 +116,15 @@ class classic_coppelia:
             pouring_idx = np.random.randint(0, high=10)
     
             self.pouring_speed = self.velocity_pool[pouring_idx]
-            print(self.pouring_speed)
+
             regression = self.regressions[pouring_idx]
             y_displacement = regression[0] * height_idx + regression[1]
+            print(f'v{self.pouring_speed},h{height},offset{y_displacement}')
             if y_displacement < self.original_y_offset:
                 y_displacement = self.original_y_offset - y_displacement
             else:
                 y_displacement = 0
+
 
             # help the agent stabilize during the first 10 episodes
             self.warm_up = y_displacement
