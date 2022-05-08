@@ -114,9 +114,9 @@ class classic_coppelia:
         # when we use the first three models means we only want to change the y
         if self.model < 3:
             pouring_idx = np.random.randint(0, high=10)
-            pouring_idx = 9
+    
             self.pouring_speed = self.velocity_pool[pouring_idx]
-
+            print(self.pouring_speed)
             regression = self.regressions[pouring_idx]
             y_displacement = regression[0] * height_idx + regression[1]
             if y_displacement < self.original_y_offset:
@@ -374,7 +374,6 @@ class classic_coppelia:
             print("something is wrong in bound penalty")
             self.finish()
             exit(0)
-        self.model = 6
         res, retInts, retFloats, retStrings, retBuffer = sim.simxCallScriptFunction(self.clientID, 'UR5',
                                                                                     sim.sim_scripttype_childscript,
                                                                                     'py_moveToPose',
@@ -598,7 +597,7 @@ class classic_coppelia:
 
         # time out penalty
         self.iteration += 1
-        if self.iteration > 110:
+        if self.iteration > 150:
             self.done = True
             print('took too long')
             reward -= 200
