@@ -418,7 +418,7 @@ class classic_coppelia:
         ret, position6 = sim.simxGetJointPosition(self.clientID, self.joint6, sim.simx_opmode_buffer)
 
         # exception handler
-        if position6 < -2.8 and self.done is False:
+        if position6 < -3.1 and self.done is False:
             print('exception rise')
             self.done = True
 
