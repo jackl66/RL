@@ -77,11 +77,11 @@ class classic_coppelia:
 
         # linear regression model to pick the starting point for exploration
         # dim 0 is the index of velocity pool
-        self.regressions = [[-0.01381495062794, -0.0314944365194866], [0.00762091092174016, -0.143133371358826],
-                            [0.0153275217328753, -0.180639958097821], [-0.0117075835665067, -0.0696382679873043],
-                            [-0.0139727824264103, -0.0461796994010607], [0.00325178829106418, -0.12277129157023],
-                            [0.0085472219520145, -0.163080342389919], [0.00899469057718913, -0.152634034554164],
-                            [0.0108376805981, -0.170764420043539], [-0.00290714353322983, -0.105323242644469]]
+        self.regressions = [[-0.0114008425763159, -0.0404692104368499], [-0.0130502221620444, -0.0321985361070344],
+                            [-0.0133292214436965, -0.0328235057267276], [-0.0131503900548972, -0.0488519692059719],
+                            [-0.0139437097238772, -0.0313131784020048], [-0.0144071032603582, -0.0427860965331396],
+                            [-0.0130329799471479, -0.0359688442764861], [-0.0131965924393047, -0.0297948994419791],
+                            [-0.0128810468948249, -0.0373327018636646], [-0.0136431304794369, -0.03255832213344]]
 
     def reset(self, num_object, obj_shape, size, height=0, ):
 
@@ -114,17 +114,16 @@ class classic_coppelia:
         # when we use the first three models means we only want to change the y
         if self.model < 3:
             pouring_idx = np.random.randint(0, high=10)
-    
+
             self.pouring_speed = self.velocity_pool[pouring_idx]
 
             regression = self.regressions[pouring_idx]
             y_displacement = regression[0] * height_idx + regression[1]
-            print(f'v{self.pouring_speed},h{height},offset{y_displacement}')
+            print(f'v {self.pouring_speed}, h {height}, offset {y_displacement}')
             if y_displacement < self.original_y_offset:
                 y_displacement = self.original_y_offset - y_displacement
             else:
                 y_displacement = 0
-
 
             # help the agent stabilize during the first 10 episodes
             self.warm_up = y_displacement
