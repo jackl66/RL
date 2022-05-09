@@ -68,5 +68,5 @@ plt.subplot(2,3,6)
 plt.plot(data5)
 plt.title("critic")
 
-plt.savefig('./img/1652051719.png',dpi=256)
+plt.savefig('./img/td3/1652051719.png',dpi=256)
 plt.show()

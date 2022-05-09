@@ -139,194 +139,73 @@ if eval:
     # token += same
 else:
     np.random.seed(0)
+   
+for i in range(1000):
+    # random initial amount and shape/size
+    mypot = np.random.randint(5)
+    obj_shape = np.random.randint(3)
+    size = np.random.randint(3)
 
-# when using PPO, apply a new traning loop
-if model == 6:
-    print('train with ppo')
-    num_step = int(input("Please enter number of step for each update:\n"))
+    if depth:
+        size = 0
+    else:
+        obj_shape = 0
 
-    for i in range(1000):
+    # value to indicate size/shape
+    ratio = [s_to_v[obj_shape][size]]
+    ratio = T.tensor(ratio, dtype=T.float).to(device)
 
-        # random initial amount and shape/size
-        mypot = np.random.randint(5)
-        obj_shape = np.random.randint(3)
-        size = np.random.randint(3)
+    obs = env.reset(mypot, obj_shape, size)
+    if eval:
+        agent.noise.reset()
+    done = False
+    score = 0
+    while not done:
 
-        if depth:
-            size = 0
+        if not depth:
+            act = agent.choose_action(obs, ratio)
         else:
-            obj_shape = 0
+            act = agent.choose_action(obs)
 
-        # value to indicate size/shape
-        ratio = [s_to_v[obj_shape][size]]
-        ratio = T.tensor(ratio, dtype=T.float).to(device)
-
-        obs = env.reset(mypot, obj_shape, size)
-
-        done = False
-        score = 0
-        # ii=0
-        while not done:
-
-            log_probs = []
-            values = []
-            states = []
-            cross_sections = []
-            actions = []
-            rewards = []
-            masks = []
-            entropy = 0
-
-            # within num_step, not updating the network
-            # only using it to produce trajectory
-            for _ in range(num_step):
-                if done:
-                    break
-                current_state = obs[:-1]
-                cross_section = obs[-1]
-                current_state = T.tensor(current_state, dtype=T.float).to(device)
-                cross_section = T.tensor(cross_section, dtype=T.float).to(device)
-                dist, value = agent.actor_critic(current_state, cross_section, ratio)
-
-                action = dist.sample()
-                clipped_action = action.cpu().numpy()
-
-                scale = max(np.absolute(clipped_action)) / 0.1
-
-                clipped_action /= scale
-                clipped_action = np.clip(clipped_action, a_min=-0.1, a_max=0.1) / 2
-
-                next_state, reward, done = env.step(clipped_action, i)
-
-                log_prob = dist.log_prob(action)
-                entropy += dist.entropy().mean()
-                log_probs.append(log_prob.cpu().detach().numpy())
-                values.append(value)
-                rewards.append(reward)
-                masks.append(1 - done)
-                states.append(obs[:-1])
-                cross_sections.append(obs[-1])
-                actions.append(clipped_action)
-                action_history.append(clipped_action)
-                score += reward
-                obs = next_state
-
-            cross_section = next_state[-1]
-            next_state = next_state[:-1]
-            cross_section = T.tensor(cross_section, dtype=T.float).to(device)
-            next_state = T.tensor(next_state, dtype=T.float).to(device)
-            _, next_value = agent.actor_critic(next_state, cross_section, ratio)
-
-            returns = agent.compute_gae(next_value, rewards, masks, values)
-
-            returns = T.cat(returns).detach()
-            values = T.cat(values).detach()
-            log_probs = np.array(log_probs)
-            states = np.array(states)
-            actions = np.array(actions)
-            cross_sections = np.array(cross_sections)
-            log_probs = T.tensor(log_probs, dtype=T.float).to(agent.device)
-            states = T.tensor(states, dtype=T.float).to(agent.device)
-            cross_sections = T.tensor(cross_sections, dtype=T.float).to(agent.device)
-            actions = T.tensor(actions, dtype=T.float).to(agent.device)
-            advantage = returns - values
-            losses = agent.ppo_update(num_step, states, cross_sections, actions,
-                                      log_probs, returns, advantage, ratio)
-
-            critic_loss_history.append(losses)
-            # print(len(critic_loss_history), ii)
-            # ii += 1
-        num_outlier = env.finish()
-        print(f'num_outlier {num_outlier}')
-        outlier_history.append(num_outlier)
-        score_history.append(score)
-        avg_score = np.mean(score_history[-100:])
-
-        if avg_score > best_score and i > warm_up:
-            best_score = avg_score
-            if not eval:
-                print('... saving checkpoint ...')
-                agent.save_models()
-            print("episode ", i, "score %.1f " % score, "best avg score %.1f " % avg_score)
-
-            best_episode = i
-
-        if i - best_episode > patient:
-            print('early stop kicks in')
-            break
-
-        if i > 100:
-            print('episode ', i, 'score %.2f' % score,
-                  'trailing 100 games avg %.3f' % np.mean(score_history[-100:]))
-        print("-------------------")
-else:
-
-    for i in range(1000):
-        # random initial amount and shape/size
-        mypot = np.random.randint(5)
-        obj_shape = np.random.randint(3)
-        size = np.random.randint(3)
-
-        if depth:
-            size = 0
-        else:
-            obj_shape = 0
-
-        # value to indicate size/shape
-        ratio = [s_to_v[obj_shape][size]]
-        ratio = T.tensor(ratio, dtype=T.float).to(device)
-
-        obs = env.reset(mypot, obj_shape, size)
-        if eval:
-            agent.noise.reset()
-        done = False
-        score = 0
-        while not done:
-
+        # for the first 10 episodes, use the linear regression result
+        # to help the help explore
+        new_state, reward, done = env.step(act, i)
+        if not eval:
+            agent.remember(obs, act, reward, new_state, int(done))
             if not depth:
-                act = agent.choose_action(obs, ratio)
+                critic_loss, actor_loss = agent.learn(ratio)
             else:
-                act = agent.choose_action(obs)
+                critic_loss, actor_loss = agent.learn()
 
-            # for the first 10 episodes, use the linear regression result
-            # to help the help explore
-            new_state, reward, done = env.step(act, i)
-            if not eval:
-                agent.remember(obs, act, reward, new_state, int(done))
-                if not depth:
-                    critic_loss, actor_loss = agent.learn(ratio)
-                else:
-                    critic_loss, actor_loss = agent.learn()
+            if not isinstance(actor_loss, str):
+                actor_loss_history.append(actor_loss)
+                critic_loss_history.append(critic_loss)
+        score += reward
+        obs = new_state
 
-                if not isinstance(actor_loss, str):
-                    actor_loss_history.append(actor_loss)
-                    critic_loss_history.append(critic_loss)
-            score += reward
-            obs = new_state
+    num_outlier = env.finish()
+    print(f'num_outlier {num_outlier}')
+    outlier_history.append(num_outlier)
+    score_history.append(score)
+    avg_score = np.mean(score_history[-100:])
 
-        num_outlier = env.finish()
-        print(f'num_outlier {num_outlier}')
-        outlier_history.append(num_outlier)
-        score_history.append(score)
-        avg_score = np.mean(score_history[-100:])
+    if avg_score > best_score and i > warm_up:
+        best_score = avg_score
+        if not eval:
+            print('... saving checkpoint ...')
+            agent.save_models()
+        print("episode ", i, "score %.1f " % score, "best avg score %.1f " % avg_score)
 
-        if avg_score > best_score and i > warm_up:
-            best_score = avg_score
-            if not eval:
-                print('... saving checkpoint ...')
-                agent.save_models()
-            print("episode ", i, "score %.1f " % score, "best avg score %.1f " % avg_score)
+        best_episode = i
 
-            best_episode = i
+    if i - best_episode > patient:
+        print('early stop kicks in')
+        break
 
-        if i - best_episode > patient:
-            print('early stop kicks in')
-            break
-
-        if i > 100:
-            print('episode ', i, 'score %.2f' % score,
-                  'trailing 100 games avg %.3f' % np.mean(score_history[-100:]))
-        print("-------------------")
+    if i > 100:
+        print('episode ', i, 'score %.2f' % score,
+                'trailing 100 games avg %.3f' % np.mean(score_history[-100:]))
+    print("-------------------")
 
 # logging
 reward_history = env.get_reward_history()

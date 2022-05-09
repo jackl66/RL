@@ -2,25 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import argparse
-height_change_pool = np.arange(start=0, stop=0.22, step=0.02)
-g=np.random.choice(height_change_pool, 1)[0]
-height_idx = np.random.randint(0, high=11)
-print(height_idx)
-print(g)
-exit()
-target_container_scale_factor_pool = [0.75, 0.8, 0.85, 0.9, 0.95, 1]
-for i in range(10):
-    num_object = np.random.randint(5)
-    result = []
-    for j in range(5):
-        scale_factor = np.random.choice(target_container_scale_factor_pool[num_object:],1)
-        result.append(scale_factor)
-    print(result,num_object)
-exit()
-height_change = np.load('./tradjectory/1/rim.npy',allow_pickle=True)
-print(height_change.shape)
-print(height_change[0])
-exit()
+ 
+ 
 # avg_out = np.zeros((240, 2))
 # print(avg_out.shape)
 # print(avg_out[:2])

@@ -28,7 +28,7 @@ class classic_coppelia:
         self.num_outlier = 0
         self.big_box_weight = 0
         self.target_box_weight = 0
-        self.reward_history = np.zeros(12)
+        self.reward_history = np.zeros(10)
         self.new_pose = np.zeros(2)
 
         # min_y, max_y,min_z,max_z
@@ -46,7 +46,7 @@ class classic_coppelia:
 
         self.eval_init_amount = [32, 36, 43, 46, 51]
         self.eval_obj_size = [0.027, 0.020, 0.014]
-        self.init_history = np.zeros(11)
+        self.init_history = np.zeros(9)
         self.init_error = 0
 
         # action space for DQN
@@ -565,7 +565,7 @@ class classic_coppelia:
         encourage fewer movements    #
         '''
         displacement_y = abs(old_y - self.new_pose[0])
-        r1 = 3 * displacement_y
+        r1 = 0.3 * displacement_y
         reward -= r1
         self.reward_history[0] -= r1  # histogram of each reward
 
