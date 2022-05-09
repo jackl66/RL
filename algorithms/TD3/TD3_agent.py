@@ -13,7 +13,7 @@ class TD3_agent(object):
         self.count = 0
         cuda_idx = 'cuda:' + idx
         self.device = T.device(cuda_idx if T.cuda.is_available() else 'cpu')
-        chkpt_dir = './checkpoint/td3/' + str(token)
+        chkpt_dir = './checkpoint/' + str(token)
         self.noise_clip = 0.004
         self.mask = T.ones(self.batch_size).to(self.device)
         self.eval = eval
