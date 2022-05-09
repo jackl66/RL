@@ -67,7 +67,7 @@ if model == 0:
                              batch_size=batch_size, n_actions=3, token=token, update_freq=update_freq, idx=idx,
                              eval=eval)
 elif model == 1:
-    # token='1642267600'
+    token='1652051719'
     if depth == 0:
         agent = TD3_agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
                           batch_size=batch_size, n_actions=1, token=token, update_freq=update_freq, idx=idx, eval=eval)
