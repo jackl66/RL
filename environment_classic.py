@@ -527,6 +527,7 @@ class classic_coppelia:
                 penalty = self.py_moveToPose([actions[0], 0])
 
                 if position6 < -1:
+                    D_speed = actions[1]
                     self.pouring_speed += D_speed
 
             # wait for the arm to reach the target position
