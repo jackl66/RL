@@ -128,7 +128,7 @@ class classic_coppelia:
             # help the agent stabilize during the first 10 episodes
             self.warm_up = y_displacement
             # update the bound based on the scale
-            self.bound = np.array([self.target_container_left_rim + y_displacement + 0.05,
+            self.bound = np.array([self.target_container_left_rim + y_displacement + 0.01,
                                    self.target_container_left_rim + 0.005, 0.66901, 0.85954])
 
         self.iteration = 0
@@ -392,6 +392,7 @@ class classic_coppelia:
         return penalty
 
     def step(self, actions, episode=0):
+        actions/=100
         ret, error = sim.simxGetFloatSignal(self.clientID, 'exception', sim.simx_opmode_blocking)
         if error == 99:
             self.init_error += 1

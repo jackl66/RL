@@ -50,7 +50,7 @@ class TD3_agent(object):
         actions = np.clip(temp, a_min=-1, a_max=1)
 
         # remap the value to be [-0.01,0.01]
-        actions /= 100
+        # actions /= 100
         return actions
 
     def remember(self, state, action, reward, new_state, done):
@@ -75,7 +75,7 @@ class TD3_agent(object):
             # Select action according to policy and add clipped noise
             noise = (T.randn_like(action) * T.tensor(self.noise(), dtype=T.float).to(self.device)). \
                 clamp(-self.noise_clip, self.noise_clip)
-            next_action = (self.target_actor.forward(new_state, cross_section, ratio) + noise).clamp(-1, 1) / 100
+            next_action = (self.target_actor.forward(new_state, cross_section, ratio) + noise).clamp(-1, 1) 
 
             # Compute the target Q value
             target_Q1, target_Q2 = self.target_critic(new_state, new_cross_section, next_action)
@@ -100,7 +100,7 @@ class TD3_agent(object):
         # Delayed policy updates
         if self.count % self.update_freq == 0:
             # Compute actor lose
-            actor_loss = -self.critic.Q1(state, cross_section, self.actor.forward(state, cross_section, ratio) / 100)
+            actor_loss = -self.critic.Q1(state, cross_section, self.actor.forward(state, cross_section, ratio))
             actor_loss = T.mean(actor_loss)
             # Optimize the actor
             self.actor.optimizer.zero_grad()
