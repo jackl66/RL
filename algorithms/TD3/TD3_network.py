@@ -11,6 +11,7 @@ class CriticNetwork(nn.Module):
                  chkpt_dir='checkpoint/', device='cuda:0'):
         super(CriticNetwork, self).__init__()
 
+        
         # os.mkdir(chkpt_dir) done in the actor network
         self.checkpoint_file = os.path.join(chkpt_dir, name + '.zip')
 
@@ -63,7 +64,7 @@ class CriticNetwork(nn.Module):
 
         self.to(device)
 
-    def forward(self, state, action):
+    def forward(self, state, cs, action):
         # ************************* Q1 ******************************#
         state_value = self.fc1(state)
         state_value = self.bn1(state_value)
@@ -90,7 +91,7 @@ class CriticNetwork(nn.Module):
 
         return state_action_value, state_action_value2
 
-    def Q1(self, state, action):
+    def Q1(self, state, cs, action):
         state_value = self.fc1(state)
         state_value = self.bn1(state_value)
         state_value = F.relu(state_value)
@@ -116,7 +117,7 @@ class ActorNetwork(nn.Module):
     def __init__(self, alpha, input_dims, n_actions, name,
                  chkpt_dir='checkpoint/', device='cuda:0'):
         super(ActorNetwork, self).__init__()
-
+ 
         self.checkpoint_file = os.path.join(chkpt_dir, name + '.zip')
 
         fc1 = 400
@@ -148,7 +149,7 @@ class ActorNetwork(nn.Module):
 
         self.to(device)
 
-    def forward(self, state, ratio):
+    def forward(self, state,cs, ratio):
         x = self.fc1(state)
         x = self.bn1(x)
         x = F.relu(x)
@@ -167,7 +168,8 @@ class ActorNetwork(nn.Module):
         return x
 
     def save_checkpoint(self):
-        # print('... saving checkpoint ...')
+        print('... saving checkpoint ...')
+         
         T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):

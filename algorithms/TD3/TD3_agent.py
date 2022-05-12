@@ -1,5 +1,5 @@
 from ..replay_buffer.oneD_Buffer import oneD_ReplayBuffer as ReplayBuffer
-from .TD3_s_network import *
+from .TD3_network import *
 
 
 class TD3_agent(object):
@@ -13,7 +13,7 @@ class TD3_agent(object):
         self.count = 0
         cuda_idx = 'cuda:' + idx
         self.device = T.device(cuda_idx if T.cuda.is_available() else 'cpu')
-        chkpt_dir = './checkpoint/td3' + str(token)
+        chkpt_dir = './checkpoint/td3/' + str(token)
         self.noise_clip = 0.004
         self.mask = T.ones(self.batch_size).to(self.device)
         self.eval = eval
@@ -22,7 +22,6 @@ class TD3_agent(object):
 
         self.actor = ActorNetwork(alpha, input_dims, n_actions,
                                   'Actor', chkpt_dir=chkpt_dir, device=self.device)
-
         self.critic = CriticNetwork(beta, input_dims, n_actions,
                                     'Critic', chkpt_dir=chkpt_dir, device=self.device)
         self.target_actor = ActorNetwork(alpha, input_dims, n_actions,
