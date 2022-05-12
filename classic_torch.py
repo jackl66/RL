@@ -230,7 +230,7 @@ with open(path1, 'wb') as f:
 with open(path2, 'wb') as f:
     np.save(f, np.array(running_avg))
 
-if not eval and model != 6:
+if not eval:
     with open(path3, 'wb') as f:
         np.save(f, np.array(critic_loss_history))
     pl = np.zeros((1, 3))
@@ -238,13 +238,9 @@ if not eval and model != 6:
     # for i in range(len(action_history)):
     # pl = np.concatenate((pl, [action_history[i]]))
     with open(path4, 'wb') as f:
-        np.save(f, np.array(action_history))
-
-elif model == 6:
-    with open(path3, 'wb') as f:
-        np.save(f, np.array(critic_loss_history).flatten())
-    with open(path4, 'wb') as f:
         np.save(f, np.array(actor_loss_history))
+
+ 
 
 with open(path5, 'wb') as f:
     np.save(f, np.array(outlier_history))
