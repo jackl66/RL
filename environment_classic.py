@@ -317,7 +317,7 @@ class classic_coppelia:
         if res == sim.simx_return_ok:
             print("remote call results:", retStrings[0])
         else:
-            print("remote function call failed")
+            print("remote init function call failed")
             self.finish()
             exit(0)
 
@@ -334,7 +334,7 @@ class classic_coppelia:
         self.old_z = retFloats[1]
 
         if res != sim.simx_return_ok:
-            print("something is wrong")
+            print("something is wrong in getting pose")
             self.finish()
             exit(0)
 
@@ -385,7 +385,7 @@ class classic_coppelia:
                                                                                     sim.simx_opmode_blocking)
 
         if res != sim.simx_return_ok:
-            print("remote function call failed")
+            print("remote move pose function call failed")
             self.finish()
             exit(0)
 

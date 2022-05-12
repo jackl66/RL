@@ -13,7 +13,7 @@ class s_Agent(object):
         self.count = 0
         cuda_idx = 'cuda:' + idx
         self.device = T.device(cuda_idx if T.cuda.is_available() else 'cpu')
-        chkpt_dir = './checkpoint/' + str(token)
+        chkpt_dir = './checkpoint/ddpg/' + str(token)
         self.mask = T.ones(self.batch_size).to(self.device)
         if eval == 0:
             os.mkdir(chkpt_dir)
@@ -35,10 +35,10 @@ class s_Agent(object):
     def choose_action(self, observation, ratio):
         self.actor.eval()
         observation1 = observation[:-1]
-        depth = observation[-1]
+        cs = observation[-1]
         observation = T.tensor(observation1, dtype=T.float).to(self.device)
-        depth = T.tensor(depth, dtype=T.float).to(self.device)
-        mu = self.actor.forward(observation, depth, ratio).to(self.device)
+        cs = T.tensor(cs, dtype=T.float).to(self.device)
+        mu = self.actor.forward(observation, cs, ratio).to(self.device)
         mu_prime = mu + T.tensor(self.noise(), dtype=T.float).to(self.device).clamp(-self.noise_clip, self.noise_clip)
         self.actor.train()
 
@@ -47,7 +47,7 @@ class s_Agent(object):
         actions = np.clip(temp, a_min=-1, a_max=1)
 
         # remap the value to be [-0.1,0.1]
-        actions /= 10
+        # actions /= 10
         return actions
 
     def remember(self, state, action, reward, new_state, done):
@@ -58,24 +58,24 @@ class s_Agent(object):
         if self.memory.mem_cntr < self.batch_size:
             return "nope", "try again"
 
-        state, action, reward, new_state, depth, new_depth, done = self.memory.sample(self.batch_size)
+        state, action, reward, new_state, cs, new_cs, done = self.memory.sample(self.batch_size)
 
         reward = T.tensor(reward, dtype=T.float).to(self.device)
         done = T.tensor(done).to(self.device)
         new_state = T.tensor(new_state, dtype=T.float).to(self.device)
         action = T.tensor(action, dtype=T.float).to(self.device)
         state = T.tensor(state, dtype=T.float).to(self.device)
-        depth = T.tensor(depth, dtype=T.float).to(self.device)
-        new_depth = T.tensor(new_depth, dtype=T.float).to(self.device)
+        cs = T.tensor(cs, dtype=T.float).to(self.device)
+        new_cs = T.tensor(new_cs, dtype=T.float).to(self.device)
 
         self.target_actor.eval()
         self.target_critic.eval()
         self.critic.eval()
 
         # get s', a' using target networks 
-        target_actions = self.target_actor.forward(new_state, new_depth, ratio) / 10
-        critic_value_ = self.target_critic.forward(new_state, new_depth, target_actions)
-        critic_value = self.critic.forward(state, depth, action)
+        target_actions = self.target_actor.forward(new_state, new_cs, ratio)  
+        critic_value_ = self.target_critic.forward(new_state, new_cs, target_actions)
+        critic_value = self.critic.forward(state, cs, action)
 
         # update the critic network 
 
@@ -101,9 +101,9 @@ class s_Agent(object):
         # gradient ascend for actor 
         self.critic.eval()
         self.actor.optimizer.zero_grad()
-        mu = self.actor.forward(state, depth, ratio)/10
+        mu = self.actor.forward(state, cs, ratio) 
         self.actor.train()
-        actor_loss = -self.critic.forward(state, depth, mu)
+        actor_loss = -self.critic.forward(state, cs, mu)
         actor_loss = T.mean(actor_loss)
         actor_loss.backward()
         self.actor.optimizer.step()

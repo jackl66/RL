@@ -60,8 +60,8 @@ model = int(args.model)
 if model == 0:
     # token='1642562823'
     if depth == 0:
-        agent = DDPG_Agent(alpha=alpha, beta=beta, input_dims=[4], tau=0.001, gamma=gamma,
-                           batch_size=batch_size, n_actions=2, token=token, update_freq=update_freq, idx=idx, eval=eval)
+        agent = DDPG_Agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
+                           batch_size=batch_size, n_actions=1, token=token, update_freq=update_freq, idx=idx, eval=eval)
     if depth == 1:
         agent = Vision_Agent(alpha=alpha, beta=beta, input_dims=[4], tau=0.001, gamma=gamma,
                              batch_size=batch_size, n_actions=3, token=token, update_freq=update_freq, idx=idx,
@@ -93,8 +93,8 @@ elif model == 3:
                             batch_size=batch_size, n_actions=3, token=token, update_freq=update_freq, idx=idx,
                             eval=eval)
 elif model == 4:
-    agent = s_Agent(alpha=alpha, beta=beta, input_dims=[4], tau=0.001, gamma=gamma,
-                    batch_size=batch_size, n_actions=3, token=token, update_freq=update_freq, idx=idx,
+    agent = s_Agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
+                    batch_size=batch_size, n_actions=1, token=token, update_freq=update_freq, idx=idx,
                     eval=eval)
 
 elif model == 5:

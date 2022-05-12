@@ -37,24 +37,24 @@ class CriticNetwork(nn.Module):
         T.nn.init.uniform_(self.q.weight.data, -normalized_q, normalized_q)
         T.nn.init.uniform_(self.q.bias.data, -normalized_q, normalized_q)
 
-        self.depth = nn.Linear(7, fc1)
-        normalized_depth = 1 / np.sqrt(self.depth.weight.data.size()[0])
-        T.nn.init.uniform_(self.depth.weight.data, -normalized_depth, normalized_depth)
-        T.nn.init.uniform_(self.depth.bias.data, -normalized_depth, normalized_depth)
-        self.depth_bn1 = nn.LayerNorm(fc1)
+        self.cs = nn.Linear(7, fc1)
+        normalized_cs = 1 / np.sqrt(self.cs.weight.data.size()[0])
+        T.nn.init.uniform_(self.cs.weight.data, -normalized_cs, normalized_cs)
+        T.nn.init.uniform_(self.cs.bias.data, -normalized_cs, normalized_cs)
+        self.cs_bn1 = nn.LayerNorm(fc1)
 
-        self.depth2 = nn.Linear(fc1, fc2)
-        normalized_depth2 = 1 / np.sqrt(self.depth2.weight.data.size()[0])
-        T.nn.init.uniform_(self.depth2.weight.data, -normalized_depth2, normalized_depth2)
-        T.nn.init.uniform_(self.depth2.bias.data, -normalized_depth2, normalized_depth2)
-        self.depth_bn2 = nn.LayerNorm(fc2)
+        self.cs2 = nn.Linear(fc1, fc2)
+        normalized_cs2 = 1 / np.sqrt(self.cs2.weight.data.size()[0])
+        T.nn.init.uniform_(self.cs2.weight.data, -normalized_cs2, normalized_cs2)
+        T.nn.init.uniform_(self.cs2.bias.data, -normalized_cs2, normalized_cs2)
+        self.cs_bn2 = nn.LayerNorm(fc2)
 
         self.dropout = nn.Dropout(0.5)
         self.optimizer = optim.Adam(self.parameters(), lr=beta)
 
         self.to(device)
 
-    def forward(self, state, depth, action):
+    def forward(self, state, cs, action):
         state_value = self.fc1(state)
         state_value = self.bn1(state_value)
         state_value = F.relu(state_value)
@@ -62,13 +62,13 @@ class CriticNetwork(nn.Module):
         state_value = self.bn2(state_value)
         # state_value=self.dropout(state_value)
 
-        depth_value = self.depth(depth)
-        depth_value = self.depth_bn1(depth_value)
-        depth_value = F.relu(depth_value)
-        depth_value = self.depth2(depth_value)
-        depth_value = self.depth_bn2(depth_value)
+        cs_value = self.cs(cs)
+        cs_value = self.cs_bn1(cs_value)
+        cs_value = F.relu(cs_value)
+        cs_value = self.cs2(cs_value)
+        cs_value = self.cs_bn2(cs_value)
 
-        state_value = F.relu(T.add(state_value, depth_value))
+        state_value = F.relu(T.add(state_value, cs_value))
 
         action_value = F.relu(self.action_value(action))
         state_action_value = F.relu(T.add(state_value, action_value))
@@ -112,18 +112,18 @@ class ActorNetwork(nn.Module):
         T.nn.init.uniform_(self.mu.weight.data, -normalized_mu, normalized_mu)
         T.nn.init.uniform_(self.mu.bias.data, -normalized_mu, normalized_mu)
 
-        # use two dense layer to learn the depth matrix as well
-        self.depth = nn.Linear(7, fc1)
-        normalized_depth = 1 / np.sqrt(self.depth.weight.data.size()[0])
-        T.nn.init.uniform_(self.depth.weight.data, -normalized_depth, normalized_depth)
-        T.nn.init.uniform_(self.depth.bias.data, -normalized_depth, normalized_depth)
-        self.depth_bn1 = nn.LayerNorm(fc1)
+        # use two dense layer to learn the cs matrix as well
+        self.cs = nn.Linear(7, fc1)
+        normalized_cs = 1 / np.sqrt(self.cs.weight.data.size()[0])
+        T.nn.init.uniform_(self.cs.weight.data, -normalized_cs, normalized_cs)
+        T.nn.init.uniform_(self.cs.bias.data, -normalized_cs, normalized_cs)
+        self.cs_bn1 = nn.LayerNorm(fc1)
 
-        self.depth2 = nn.Linear(fc1, fc2)
-        normalized_depth2 = 1 / np.sqrt(self.depth2.weight.data.size()[0])
-        T.nn.init.uniform_(self.depth2.weight.data, -normalized_depth2, normalized_depth2)
-        T.nn.init.uniform_(self.depth2.bias.data, -normalized_depth2, normalized_depth2)
-        self.depth_bn2 = nn.LayerNorm(fc2)
+        self.cs2 = nn.Linear(fc1, fc2)
+        normalized_cs2 = 1 / np.sqrt(self.cs2.weight.data.size()[0])
+        T.nn.init.uniform_(self.cs2.weight.data, -normalized_cs2, normalized_cs2)
+        T.nn.init.uniform_(self.cs2.bias.data, -normalized_cs2, normalized_cs2)
+        self.cs_bn2 = nn.LayerNorm(fc2)
 
         self.ratio_dis = nn.Linear(1, 32)
         self.ratio_dis2 = nn.Linear(32, n_actions)
@@ -133,7 +133,7 @@ class ActorNetwork(nn.Module):
 
         self.to(device)
 
-    def forward(self, state, depth, ratio):
+    def forward(self, state, cs, ratio):
         x = self.fc1(state)
         x = self.bn1(x)
         x = F.relu(x)
@@ -141,22 +141,22 @@ class ActorNetwork(nn.Module):
         x = self.bn2(x)
         x = F.relu(x)
 
-        depth_value = self.depth(depth)
-        depth_value = self.depth_bn1(depth_value)
-        depth_value = F.relu(depth_value)
-        depth_value = self.depth2(depth_value)
-        depth_value = self.depth_bn2(depth_value)
-        depth_value = F.relu(depth_value)
+        cs_value = self.cs(cs)
+        cs_value = self.cs_bn1(cs_value)
+        cs_value = F.relu(cs_value)
+        cs_value = self.cs2(cs_value)
+        cs_value = self.cs_bn2(cs_value)
+        cs_value = F.relu(cs_value)
 
-        x = T.add(x, depth_value)
+        x = T.add(x, cs_value)
 
-        # y = self.ratio_dis(ratio)
-        # y = F.relu(y)
-        # y = self.ratio_dis2(y)
-        # y = F.relu(y)
+        y = self.ratio_dis(ratio)
+        y = F.relu(y)
+        y = self.ratio_dis2(y)
+        y = F.relu(y)
 
-        # x = T.tanh(T.add(self.mu(x),y))
-        x = T.tanh(self.mu(x))
+        x = T.tanh(T.add(self.mu(x),y))
+        # x = T.tanh(self.mu(x))
         return x
 
     def save_checkpoint(self):

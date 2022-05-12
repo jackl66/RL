@@ -13,7 +13,7 @@ class DDPG_Agent(object):
         self.count = 0
         cuda_idx = 'cuda:' + idx
         self.device = T.device(cuda_idx if T.cuda.is_available() else 'cpu')
-        chkpt_dir = './checkpoint/' + str(token)
+        chkpt_dir = './checkpoint/ddpg/' + str(token)
         self.mask = T.ones(self.batch_size).to(self.device)
         if eval == 0:
             os.mkdir(chkpt_dir)
@@ -44,7 +44,7 @@ class DDPG_Agent(object):
         actions = np.clip(temp, a_min=-1, a_max=1)
 
         # remap the value to be [-0.1,0.1]
-        actions /= 10
+        # actions /= 10
         return actions
 
     def remember(self, state, action, reward, new_state, done):

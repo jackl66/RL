@@ -5,24 +5,24 @@ import torch as T
 import torch.nn.functional as F
 import ast
  
-path1='./npy/1652106258/actor.npy'
+path1='./npy/1652318406/actor.npy'
 data1=np.load(path1)
 data1=data1[data1!=0]
-path5='./npy/1652106258/critic.npy'
+path5='./npy/1652318406/critic.npy'
 data5=np.load(path5)
 
-path2='./npy/1652106258/avg.npy'
+path2='./npy/1652318406/avg.npy'
 data2=np.load(path2)
 
 
-path3='./npy/1652106258/score.npy'
+path3='./npy/1652318406/score.npy'
 data3=np.load(path3)   
 # data2=data2[:350] 
 # data2=data2[20:]
-path4='./npy/1652106258/out.npy'
+path4='./npy/1652318406/out.npy'
 data4=np.load(path4)
 data4=data4[10:]
-path6='./npy/1652106258/reward.npy'
+path6='./npy/1652318406/reward.npy'
 data6=np.load(path6)
 
 
@@ -68,5 +68,5 @@ plt.subplot(2,3,6)
 plt.plot(data5)
 plt.title("critic")
 
-plt.savefig('./img/td3/1652106258.png',dpi=256)
+plt.savefig('./img/td3/1652318406.png',dpi=256)
 plt.show()
