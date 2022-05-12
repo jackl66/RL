@@ -1,5 +1,5 @@
 from ..replay_buffer.oneD_Buffer import oneD_ReplayBuffer as ReplayBuffer
-from .network_torch import *
+from .s_network_torch import *
 
 
 class DDPG_Agent(object):
@@ -33,16 +33,17 @@ class DDPG_Agent(object):
 
     def choose_action(self, observation, ratio):
         self.actor.eval()
-        observation = T.tensor(observation, dtype=T.float).to(self.device)
 
-        mu = self.actor.forward(observation, ratio).to(self.device)
-        mu_prime = mu + T.tensor(self.noise(), dtype=T.float).to(self.device)
+        observation1 = observation[:-1]
+        cs = observation[-1]
+        observation = T.tensor(observation1, dtype=T.float).to(self.device)
+        cs = T.tensor(cs, dtype=T.float).to(self.device)
+        mu = self.actor.forward(observation, cs, ratio).to(self.device)
+        mu_prime = mu + T.tensor(self.noise(), dtype=T.float).to(self.device).clamp(-self.noise_clip, self.noise_clip)
         self.actor.train()
 
-        # make sure the noise doesn't make |mu| > 1
         temp = mu_prime.cpu().detach().numpy()
         actions = np.clip(temp, a_min=-1, a_max=1)
-
         # remap the value to be [-0.1,0.1]
         # actions /= 10
         return actions
@@ -55,22 +56,25 @@ class DDPG_Agent(object):
         if self.memory.mem_cntr < self.batch_size:
             return "nope", "try again"
 
-        state, action, reward, new_state, done = self.memory.sample(self.batch_size)
+        state, action, reward, new_state, cs, new_cs, done = self.memory.sample(self.batch_size)
 
         reward = T.tensor(reward, dtype=T.float).to(self.device)
         done = T.tensor(done).to(self.device)
         new_state = T.tensor(new_state, dtype=T.float).to(self.device)
         action = T.tensor(action, dtype=T.float).to(self.device)
         state = T.tensor(state, dtype=T.float).to(self.device)
+        cs = T.tensor(cs, dtype=T.float).to(self.device)
+        new_cs = T.tensor(new_cs, dtype=T.float).to(self.device)
+
 
         self.target_actor.eval()
         self.target_critic.eval()
         self.critic.eval()
 
         # get s', a' using target networks 
-        target_actions = self.target_actor.forward(new_state, ratio)
-        critic_value_ = self.target_critic.forward(new_state, target_actions)
-        critic_value = self.critic.forward(state, action)
+        target_actions = self.target_actor.forward(new_state,new_cs, ratio)
+        critic_value_ = self.target_critic.forward(new_state,new_cs, target_actions)
+        critic_value = self.critic.forward(state,cs, action)
 
         # update the critic network 
 
@@ -96,9 +100,9 @@ class DDPG_Agent(object):
         # gradient ascend for actor 
         self.critic.eval()
         self.actor.optimizer.zero_grad()
-        mu = self.actor.forward(state, ratio)
+        mu = self.actor.forward(state, cs, ratio)
         self.actor.train()
-        actor_loss = -self.critic.forward(state, mu)
+        actor_loss = -self.critic.forward(state,cs, mu)
         actor_loss = T.mean(actor_loss)
         actor_loss.backward()
         self.actor.optimizer.step()

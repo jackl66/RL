@@ -42,7 +42,7 @@ class CriticNetwork(nn.Module):
 
         self.to(device)
 
-    def forward(self, state, action):
+    def forward(self, state, cs, action):
         state_value = self.fc1(state)
         state_value = self.bn1(state_value)
         state_value = F.relu(state_value)
@@ -100,7 +100,7 @@ class ActorNetwork(nn.Module):
 
         self.to(device)
 
-    def forward(self, state, ratio):
+    def forward(self, state, cs, ratio):
         x = self.fc1(state)
         x = self.bn1(x)
         x = F.relu(x)
@@ -108,13 +108,13 @@ class ActorNetwork(nn.Module):
         x = self.bn2(x)
         x = F.relu(x)
 
-        # y = self.ratio_dis(ratio)
-        # y = F.relu(y)
-        # y = self.ratio_dis2(y)
-        # y = F.relu(y)
+        y = self.ratio_dis(ratio)
+        y = F.relu(y)
+        y = self.ratio_dis2(y)
+        y = F.relu(y)
 
-        # x = T.tanh(T.add(self.mu(x),y))
-        x = T.tanh(self.mu(x))
+        x = T.tanh(T.add(self.mu(x),y))
+        # x = T.tanh(self.mu(x))
         return x
 
     def save_checkpoint(self):

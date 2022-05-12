@@ -94,7 +94,7 @@ elif model == 3:
                             eval=eval)
 elif model == 4:
     agent = s_Agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
-                    batch_size=batch_size, n_actions=1, token=token, update_freq=update_freq, idx=idx,
+                    batch_size=batch_size, n_actions=2, token=token, update_freq=update_freq, idx=idx,
                     eval=eval)
 
 elif model == 5:

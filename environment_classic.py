@@ -112,23 +112,23 @@ class classic_coppelia:
 
         y_displacement = 0
         # when we use the first three models means we only want to change the y
-        if self.model < 3:
-            pouring_idx = np.random.randint(0, high=10)
+        # if self.model < 3:
+        pouring_idx = np.random.randint(0, high=10)
 
-            self.pouring_speed = self.velocity_pool[pouring_idx]
+        self.pouring_speed = self.velocity_pool[pouring_idx]
 
-            regression = self.regressions[pouring_idx]
-            y_displacement = regression[0] * height_idx + regression[1]
-            print(f'v {self.pouring_speed}, h {height}, offset {y_displacement}')
-            if y_displacement < self.original_y_offset:
-                y_displacement = self.original_y_offset - y_displacement
-            else:
-                y_displacement = 0
+        regression = self.regressions[pouring_idx]
+        y_displacement = regression[0] * height_idx + regression[1]
+        print(f'v {self.pouring_speed}, h {height}, offset {y_displacement}')
+        if y_displacement < self.original_y_offset:
+            y_displacement = self.original_y_offset - y_displacement
+        else:
+            y_displacement = 0
 
-            # help the agent stabilize during the first 10 episodes
-            self.warm_up = y_displacement
-            # update the bound based on the scale
-            self.bound = np.array([self.target_container_left_rim + y_displacement + 0.01,
+        # help the agent stabilize during the first 10 episodes
+        self.warm_up = y_displacement
+        # update the bound based on the scale
+        self.bound = np.array([self.target_container_left_rim + y_displacement + 0.01,
                                    self.target_container_left_rim + 0.005, 0.66901, 0.85954])
 
         self.iteration = 0
@@ -522,7 +522,7 @@ class classic_coppelia:
             # move the end effector to target position,
             # for 1D models, action's shape (1,) = (displacement_y)
             # for 2D models, action's shape (2,) = (displacement_y, delta v)
-            if self.model < 3:
+            if len(actions) == 1:
                 penalty = self.py_moveToPose([actions, 0])
             else:
                 penalty = self.py_moveToPose([actions[0], 0])
