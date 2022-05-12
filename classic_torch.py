@@ -80,17 +80,17 @@ elif model == 2:
     # token='1642625149'
 
     if depth == 0:
-        agent = DQN_agent(alpha=alpha, beta=beta, input_dims=[7], tau=0.001, gamma=gamma,
-                          batch_size=batch_size, n_actions=9, token=token, update_freq=update_freq, idx=idx, eval=eval)
+        agent = DQN_agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
+                          batch_size=batch_size, n_actions=3, token=token, update_freq=update_freq, idx=idx, eval=eval)
     if depth == 1:
         agent = Vision_DQN_agent(alpha=alpha, beta=beta, input_dims=[4], tau=0.001, gamma=gamma,
                                  batch_size=batch_size, n_actions=27, token=token, update_freq=update_freq, idx=idx,
                                  eval=eval)
 elif model == 3:
-    token = '1649383425'
+    # token = '1649383425'
 
     agent = TD3_speed_agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
-                            batch_size=batch_size, n_actions=3, token=token, update_freq=update_freq, idx=idx,
+                            batch_size=batch_size, n_actions=2, token=token, update_freq=update_freq, idx=idx,
                             eval=eval)
 elif model == 4:
     agent = s_Agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
@@ -107,8 +107,8 @@ elif model == 6:
                       ppo_update_eps=update_freq, idx=idx, eval=eval)
     # agent = Agent2(3,5)
 else:
-    agent = DQN_s_agent(alpha=alpha, beta=beta, input_dims=[4], tau=0.001, gamma=gamma,
-                        batch_size=batch_size, n_actions=27, token=token, update_freq=update_freq, idx=idx, eval=eval)
+    agent = DQN_s_agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
+                        batch_size=batch_size, n_actions=9, token=token, update_freq=update_freq, idx=idx, eval=eval)
 
 # start coppelia connection
 env = classic_coppelia(depth, token, port=port, model=model, eval=eval, )

@@ -12,6 +12,8 @@ class DDPG_Agent(object):
         self.update_freq = update_freq
         self.count = 0
         cuda_idx = 'cuda:' + idx
+        self.noise_clip = 0.004
+
         self.device = T.device(cuda_idx if T.cuda.is_available() else 'cpu')
         chkpt_dir = './checkpoint/ddpg/' + str(token)
         self.mask = T.ones(self.batch_size).to(self.device)
