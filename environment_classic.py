@@ -37,6 +37,7 @@ class classic_coppelia:
 
         self.old_z = 0
         self.old_y = 0
+        self.ori_z = 0
         self.emptyBuff = bytearray()
         # self.init_amount = [30, 35, 40, 45, 50]
         self.init_amount = [20, 25, 30, 35, 40]
@@ -100,6 +101,7 @@ class classic_coppelia:
 
         # randomly makes the target smaller
         self.scale_factor = np.random.choice(self.target_container_scale_factor_pool[num_object:], 1)[0]
+        # self.scale_factor = 0.75
         self.target_container_left_rim = -9.6500e-01 + 1.5007e-01 / 2 * self.scale_factor
         self.target_container_right_rim = -9.6500e-01 - 1.5007e-01 / 2 * self.scale_factor
         self.target_container_rim_hight = +6.5265e-01 + 8.0186e-02 / 2 * self.scale_factor
@@ -109,8 +111,8 @@ class classic_coppelia:
         # the height of the rim is fixed for each episode
         height_idx = np.random.randint(0, high=11)
         height = self.height_change_pool[height_idx]
+        # print(self.scale_factor, height)
 
-        y_displacement = 0
         # when we use the first three models means we only want to change the y
         # if self.model < 3:
         pouring_idx = np.random.randint(0, high=10)
@@ -119,17 +121,19 @@ class classic_coppelia:
 
         regression = self.regressions[pouring_idx]
         y_displacement = regression[0] * height_idx + regression[1]
-        print(f'v {self.pouring_speed}, h {height}, offset {y_displacement}')
+
         if y_displacement < self.original_y_offset:
             y_displacement = self.original_y_offset - y_displacement
         else:
             y_displacement = 0
+        print(f'v {self.pouring_speed}, h {height}, offset {y_displacement}')
 
         # help the agent stabilize during the first 10 episodes
         self.warm_up = y_displacement
+
         # update the bound based on the scale
         self.bound = np.array([self.target_container_left_rim + y_displacement + 0.01,
-                                   self.target_container_left_rim + 0.005, 0.66901, 0.85954])
+                               self.target_container_left_rim + 0.005, 0.66901, 0.85954])
 
         self.iteration = 0
         self.num_object = self.init_amount[num_object]
@@ -163,6 +167,7 @@ class classic_coppelia:
         ret, signalValue = sim.simxGetFloatSignal(self.clientID, 'init_done', sim.simx_opmode_streaming)
         ret, error = sim.simxGetFloatSignal(self.clientID, 'exception', sim.simx_opmode_streaming)
         ret, pack_img = sim.simxGetStringSignal(self.clientID, 'pack_img', sim.simx_opmode_streaming)
+
         # only for rim to rim case
         ret0, signalValue = sim.simxGetFloatSignal(self.clientID, 'first_arm_done', sim.simx_opmode_streaming)
 
@@ -205,7 +210,7 @@ class classic_coppelia:
         # move the arm to target height
         # and stay there for this episode
         self.py_get_pose()
-        self.py_moveToPose([y_displacement, height])
+        self.py_moveToPose([y_displacement, height], 0)
         loop = 20
         while loop > 0:
             self.triggerSim()
@@ -266,24 +271,7 @@ class classic_coppelia:
         ret, rim_position = sim.simxGetObjectPosition(self.clientID, self.rim, -1, sim.simx_opmode_buffer)
 
         self.py_get_pose()
-
-        # res, self.ori_relative_displacement = sim.simxGetObjectPosition(self.clientID, self.cup, self.target_area,
-        #                                                                 sim.simx_opmode_buffer)
-        # self.ori_relative_displacement = np.array(self.ori_relative_displacement)
-        # for i in self.ori_relative_displacement:
-        #     distance += i ** 2
-        # distance = np.sqrt(distance)
-
-        # return time in millisecond, convert to second to keep the number small
-        # self.start_time = sim.simxGetLastCmdTime(self.clientID) / 1000
-
-        # new_state.append(position6)  # joint6 angular displacement
-        # new_state.append(self.pouring_speed)  # joint6 angular velocity
-        # new_state.append(0)  # relative displacement
-        # new_state.append(distance)  # distance between centers of pouring and receiving
-        # new_state.append(0)  # time for pouring
-        # new_state.append(np.zeros(7))
-
+        self.ori_z = self.old_z
         new_state.append(0)  # joint6 angular displacement
         new_state.append(self.pouring_speed)  # joint6 angular velocity
 
@@ -339,11 +327,12 @@ class classic_coppelia:
             exit(0)
 
     # call Lua script to control the end-effector
-    def py_moveToPose(self, displacement):
+    def py_moveToPose(self, displacement, hold_z):
 
         penalty = 0
         # see ddpg_torch.py choose_action() for more info
         self.new_pose[0] = self.old_y + displacement[0]
+
         self.new_pose[1] = self.old_z + displacement[1]
 
         # if they reach the boundary, apply penalty
@@ -378,9 +367,9 @@ class classic_coppelia:
         res, retInts, retFloats, retStrings, retBuffer = sim.simxCallScriptFunction(self.clientID, 'UR5',
                                                                                     sim.sim_scripttype_childscript,
                                                                                     'py_moveToPose',
-                                                                                    [],
+                                                                                    [hold_z],
                                                                                     [self.new_pose[0],
-                                                                                     self.new_pose[1]],
+                                                                                     self.new_pose[1], self.ori_z],
                                                                                     [], self.emptyBuff,
                                                                                     sim.simx_opmode_blocking)
 
@@ -392,7 +381,7 @@ class classic_coppelia:
         return penalty
 
     def step(self, actions, episode=0):
-        actions/=100
+        actions /= 100
         ret, error = sim.simxGetFloatSignal(self.clientID, 'exception', sim.simx_opmode_blocking)
         if error == 99:
             self.init_error += 1
@@ -419,7 +408,7 @@ class classic_coppelia:
         ret, position6 = sim.simxGetJointPosition(self.clientID, self.joint6, sim.simx_opmode_buffer)
 
         # exception handler
-        if position6 < -3.1 and self.done is False:
+        if position6 < -3.2 and self.done is False:
             print('exception rise')
             self.done = True
 
@@ -465,25 +454,6 @@ class classic_coppelia:
         old_y = self.old_y
         old_z = self.old_z
 
-        # relative distance and displacement
-        # relative_position returns (x,y,z), target box is the origin
-        # res, relative_position = sim.simxGetObjectPosition(self.clientID, self.cup, self.target_area,
-        #                                                    sim.simx_opmode_buffer)
-        # relative_displacement = np.array(relative_position) - self.ori_relative_displacement
-        # displacement = 0
-        # distance = 0
-        # for i in range(len(relative_displacement)):
-        #     displacement += relative_displacement[i] ** 2
-        #     distance += relative_position[i] ** 2  # using the target center as origin,
-        #     # distance += (relative_position[i] - self.target_position[i]) ** 2     # using world coordinate
-        #
-        # displacement = np.sqrt(displacement)
-        # distance = np.sqrt(distance)
-        # new_state.append(displacement)
-        # new_state.append(distance)
-        # new_state.append(self.current_time)
-        # new_state.append(self.pdf)
-
         ret, rim_position = sim.simxGetObjectPosition(self.clientID, self.rim, -1, sim.simx_opmode_buffer)
         rotated = position6 - self.ori_position
 
@@ -517,15 +487,16 @@ class classic_coppelia:
         D_speed = 0
 
         if not self.done:
-            if episode < 10:
+            if episode < 10 and not self.eval:
                 actions[0] = self.warm_up + random.uniform(-1, 1) / 500 * episode
             # move the end effector to target position,
             # for 1D models, action's shape (1,) = (displacement_y)
             # for 2D models, action's shape (2,) = (displacement_y, delta v)
             if len(actions) == 1:
-                penalty = self.py_moveToPose([actions, 0])
+
+                penalty = self.py_moveToPose([actions, 0], 1)
             else:
-                penalty = self.py_moveToPose([actions[0], 0])
+                penalty = self.py_moveToPose([actions[0], 0], 1)
 
                 if position6 < -1:
                     D_speed = actions[1]
