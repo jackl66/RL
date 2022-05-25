@@ -39,13 +39,16 @@ class classic_coppelia:
         self.old_y = 0
         self.ori_z = 0
         self.emptyBuff = bytearray()
-        # self.init_amount = [30, 35, 40, 45, 50]
-        self.init_amount = [20, 25, 30, 35, 40]
+        self.init_amount = [30, 35, 40, 45, 50]
+
+        # smaller to accommodate the shrink factor
+        # self.init_amount = [20, 25, 30, 35, 40]
 
         self.obj_string = ['Cuboid', 'Cylinder', 'Sphere']
         self.obj_size = [0.025, 0.019, 0.016]
 
-        self.eval_init_amount = [32, 36, 43, 46, 51]
+        # self.eval_init_amount = [32, 36, 43, 46, 51]
+        self.eval_init_amount = [18, 22, 29, 34, 42]
         self.eval_obj_size = [0.027, 0.020, 0.014]
         self.init_history = np.zeros(9)
         self.init_error = 0
@@ -72,9 +75,17 @@ class classic_coppelia:
         self.img_bound = np.arange(start=0, stop=8 / 7, step=1 / 7, dtype=float)
         self.pdf = np.zeros(7)
         self.same = int(same)
-        self.target_container_scale_factor_pool = [0.75, 0.8, 0.85, 0.9, 0.95, 1]
-        self.velocity_pool = [-0.75, - 0.7, -0.65, -0.6, -0.55, -0.5, -0.45, -0.4, -0.35, -0.3]
-        self.height_change_pool = np.arange(start=0, stop=0.22, step=0.02)
+        # self.target_container_scale_factor_pool = [0.75, 0.8, 0.85, 0.9, 0.95, 1]
+        # self.velocity_pool = [-0.75, - 0.7, -0.65, -0.6, -0.55, -0.5, -0.45, -0.4, -0.35, -0.3]
+
+        # shrink to only test hard cases
+        self.velocity_pool = [-0.75, - 0.7, -0.65, -0.6]
+        self.height_change_pool = np.arange(start=0.02, stop=0.22, step=0.02)
+
+        self.target_container_scale_factor_pool = [0.55, 0.65, 0.75]
+        self.height_scale_factor_pool = [2.25, 2, 1.75, 1.5]
+
+        self.ori_rim = [-(9.65 - 0.75) / 10, (5.1949 + 0.80183 / 2) / 10]
 
         # linear regression model to pick the starting point for exploration
         # dim 0 is the index of velocity pool
@@ -84,7 +95,7 @@ class classic_coppelia:
                             [-0.0130329799471479, -0.0359688442764861], [-0.0131965924393047, -0.0297948994419791],
                             [-0.0128810468948249, -0.0373327018636646], [-0.0136431304794369, -0.03255832213344]]
 
-    def reset(self, num_object, obj_shape, size, height=0, ):
+    def reset(self, num_object, obj_shape, size):
 
         self.done = False
         self.final_reward = False
@@ -98,46 +109,10 @@ class classic_coppelia:
         else:
             self.num_object = self.init_amount[num_object]
             self.size = self.obj_size[size]
-
-        # randomly makes the target smaller
-        self.scale_factor = np.random.choice(self.target_container_scale_factor_pool[num_object:], 1)[0]
-        # self.scale_factor = 0.75
-        self.target_container_left_rim = -9.6500e-01 + 1.5007e-01 / 2 * self.scale_factor
-        self.target_container_right_rim = -9.6500e-01 - 1.5007e-01 / 2 * self.scale_factor
-        self.target_container_rim_hight = +6.5265e-01 + 8.0186e-02 / 2 * self.scale_factor
-        # the offset to move the cup in order to make it that rim to rim
-        self.original_y_offset = -0.088 * self.scale_factor
-
-        # the height of the rim is fixed for each episode
-        height_idx = np.random.randint(0, high=11)
-        height = self.height_change_pool[height_idx]
-        # print(self.scale_factor, height)
-
-        # when we use the first three models means we only want to change the y
-        # if self.model < 3:
-        pouring_idx = np.random.randint(0, high=10)
-
-        self.pouring_speed = self.velocity_pool[pouring_idx]
-
-        regression = self.regressions[pouring_idx]
-        y_displacement = regression[0] * height_idx + regression[1]
-
-        if y_displacement < self.original_y_offset:
-            y_displacement = self.original_y_offset - y_displacement
-        else:
-            y_displacement = 0
-        print(f'v {self.pouring_speed}, h {height}, offset {y_displacement}')
-
-        # help the agent stabilize during the first 10 episodes
-        self.warm_up = y_displacement
-
-        # update the bound based on the scale
-        self.bound = np.array([self.target_container_left_rim + y_displacement + 0.01,
-                               self.target_container_left_rim + 0.005, 0.66901, 0.85954])
-
+        # self.num_object = 30
+        # todo need to change in the future
+        self.size = self.obj_size[1]
         self.iteration = 0
-        self.num_object = self.init_amount[num_object]
-        self.size = self.obj_size[size]
         self.object = self.obj_string[obj_shape]
         self.total_block_weight = self.num_object * self.mass * 9.81
 
@@ -145,6 +120,51 @@ class classic_coppelia:
         self.init_history[num_object] += 1
         self.init_history[5 + size] += 1
         self.init_history[8 + obj_shape] += 1
+        # randomly makes the target smaller and taller
+        self.width_scale = np.random.choice(self.target_container_scale_factor_pool, 1)[0]
+        self.height_scale = np.random.choice(self.height_scale_factor_pool, 1)[0]
+        # self.width_scale = 0.55
+        # self.height_scale = 2.25
+        self.target_container_left_rim = -9.6500e-01 + (1.5007e-01) / 2 * self.width_scale
+        self.target_container_right_rim = -9.6500e-01 - (1.5007e-01) / 2 * self.width_scale
+        self.target_container_rim_hight = +5.1949e-01 + (
+            8.0195e-02) / 2 * self.width_scale + 9.4118e-02 * self.height_scale
+        # the offset to move the cup in order to make it that rim to rim
+        self.original_y_offset = -0.085 * self.width_scale
+
+        # the height of the rim is fixed for each episode
+        height_idx = np.random.randint(0, high=10)
+        # height_idx = 9
+        height = self.height_change_pool[height_idx]
+        height += 9.4118e-02 * self.height_scale
+
+        # when we use the first three models means we only want to change the y
+        # if self.model < 3:
+        pouring_idx = np.random.randint(0, high=4)
+        # pouring_idx = 0
+
+        self.pouring_speed = self.velocity_pool[pouring_idx]
+
+        regression = self.regressions[pouring_idx]
+        y_displacement = regression[0] * (height_idx + 1) + regression[1]
+
+        if y_displacement < self.original_y_offset:
+            y_displacement = abs(y_displacement - self.original_y_offset)
+        else:
+            y_displacement = 0
+        old_y = y_displacement
+
+        # # todo 0.01 diff between 1.40 and 1.48
+
+        y_displacement -= (1.4007e-01) * 0.5 * (1 - self.width_scale) - 0.005
+
+        print(f'v {self.pouring_speed}, h {height}, offset {y_displacement}, old y {old_y},',
+              f'shrink factor {self.width_scale}, height scale {self.height_scale}, num obj {self.num_object}')
+
+        # update the bound based on the scale
+        self.bound = np.array(
+            [self.target_container_left_rim + abs(y_displacement) + 0.02 + (1.4007e-01) * 0.5 * (1 - self.width_scale),
+             self.target_container_left_rim + 0.005, 0.66901, 0.85954])
 
         self.clientID = sim.simxStart('127.0.0.1', self.port, True, True, 5000, 5)
 
@@ -201,7 +221,7 @@ class classic_coppelia:
         returnCode, resolution, depthImage = sim.simxGetVisionSensorDepthBuffer(self.clientID, self.camDepth,
                                                                                 sim.simx_opmode_streaming)
         self.triggerSim()
-
+        self.setNumberOfBlock()
         ret0, signalValue1 = sim.simxGetFloatSignal(self.clientID, 'first_arm_done', sim.simx_opmode_buffer)
         while signalValue1 != 99:
             self.triggerSim()
@@ -219,7 +239,6 @@ class classic_coppelia:
         sim.simxSetIntegerSignal(self.clientID, 'arm_done', 99, sim.simx_opmode_oneshot)
 
         # wait for objects to be created
-        self.setNumberOfBlock()
         while True:
             self.triggerSim()
             # signal to mark the creation is finished
@@ -236,13 +255,11 @@ class classic_coppelia:
             if error == 99:
                 self.init_error += 1
 
-        print("init done")
-
         # record the weights of the box to determine when is done
         ret, state, forceVector, torqueVector = sim.simxReadForceSensor(self.clientID, self.target,
                                                                         sim.simx_opmode_buffer)
         self.target_box_weight = -1 * forceVector[2]
-
+        # print(self.target_box_weight)
         # big box weight = big box + small box(target)
         ret, state, forceVector2, torqueVector = sim.simxReadForceSensor(self.clientID, self.box,
                                                                          sim.simx_opmode_buffer)
@@ -299,7 +316,8 @@ class classic_coppelia:
                                                                                     'setNumberOfBlocks',
                                                                                     [self.num_object],
                                                                                     [self.mass, self.size,
-                                                                                     self.scale_factor],
+                                                                                     self.width_scale,
+                                                                                     self.height_scale],
                                                                                     [self.object], emptyBuff,
                                                                                     sim.simx_opmode_blocking)
         if res == sim.simx_return_ok:
@@ -332,7 +350,7 @@ class classic_coppelia:
         penalty = 0
         # see ddpg_torch.py choose_action() for more info
         self.new_pose[0] = self.old_y + displacement[0]
-
+        # print(self.old_y, self.new_pose, self.bound[0])
         self.new_pose[1] = self.old_z + displacement[1]
 
         # if they reach the boundary, apply penalty
@@ -340,10 +358,12 @@ class classic_coppelia:
         # boundary is calculated using start pose + rand + max_action
         # also we don't want it to go out of bound, so we clip
         if self.new_pose[0] >= self.bound[0]:
+            # print(99, self.new_pose, self.bound[0])
             penalty += 1
             self.new_pose[0] = self.bound[0]
 
         if self.new_pose[0] <= self.bound[1]:
+            # print(123)
             penalty += 1
             self.new_pose[0] = self.bound[1]
         # we won't change height for now
@@ -408,7 +428,7 @@ class classic_coppelia:
         ret, position6 = sim.simxGetJointPosition(self.clientID, self.joint6, sim.simx_opmode_buffer)
 
         # exception handler
-        if position6 < -3.2 and self.done is False:
+        if position6 < -3.3 and self.done is False:
             print('exception rise')
             self.done = True
 
@@ -486,29 +506,32 @@ class classic_coppelia:
         penalty = 0
         D_speed = 0
 
+        # use median filter to reduce the force reading noise
+        outlier_reading = []
         if not self.done:
-            if episode < 10 and not self.eval:
-                actions[0] = self.warm_up + random.uniform(-1, 1) / 500 * episode
-            # move the end effector to target position,
-            # for 1D models, action's shape (1,) = (displacement_y)
-            # for 2D models, action's shape (2,) = (displacement_y, delta v)
-            if len(actions) == 1:
+            if episode < 7 and not self.eval:
+                actions[0] = 0
+            elif (episode > 7 and not self.eval) or self.eval:
+                actions[0] /= 10
+                # move the end effector to target position,
+                # for 1D models, action's shape (1,) = (displacement_y)
+                # for 2D models, action's shape (2,) = (displacement_y, delta v)
+                if len(actions) == 1:
+                    penalty = self.py_moveToPose([actions, 0], 1)
+                else:
+                    penalty = self.py_moveToPose([actions[0], 0], 1)
 
-                penalty = self.py_moveToPose([actions, 0], 1)
-            else:
-                penalty = self.py_moveToPose([actions[0], 0], 1)
+                    if position6 < -1:
+                        D_speed = actions[1]
+                        self.pouring_speed += D_speed
 
-                if position6 < -1:
-                    D_speed = actions[1]
-                    self.pouring_speed += D_speed
-
-            # wait for the arm to reach the target position
-            force_out = 0  # exception handler
-            while (abs(self.old_y - self.new_pose[0]) > 0.005
-                   or abs(self.old_z - self.new_pose[1]) > 0.005) and force_out < 20:
-                self.triggerSim()
-                force_out += 1
-                self.py_get_pose()
+                # wait for the arm to reach the target position
+                force_out = 0  # exception handler
+                while (abs(self.old_y - self.new_pose[0]) > 0.005
+                       or abs(self.old_z - self.new_pose[1]) > 0.005) and force_out < 20:
+                    self.triggerSim()
+                    force_out += 1
+                    self.py_get_pose()
             errorCode = sim.simxSetJointTargetVelocity(self.clientID, self.joint6, self.pouring_speed,
                                                        sim.simx_opmode_oneshot)
             self.triggerSim()
@@ -525,11 +548,13 @@ class classic_coppelia:
 
             # make sure everything setting down before we read outliers
             temp = 0
-            while temp < 20:
+            while temp < 50:
+                if temp < 30:
+                    ret, state, forceVector2, torqueVector = sim.simxReadForceSensor(self.clientID, self.target,
+                                                                                     sim.simx_opmode_buffer)
+                    outlier_reading.append(forceVector2[2])
                 self.triggerSim()
                 temp += 1
-
-            print("rotated back done")
 
         # rewards
         '''
@@ -593,7 +618,8 @@ class classic_coppelia:
                 # things in the target area, including the target box
                 ret, state, forceVector2, torqueVector = sim.simxReadForceSensor(self.clientID, self.target,
                                                                                  sim.simx_opmode_buffer)
-                target_weight = -1 * forceVector2[2] - self.target_box_weight
+                target_weight = np.median(outlier_reading)
+                target_weight = -1 * target_weight - self.target_box_weight
                 outlier_weight = self.total_block_weight - target_weight
 
                 # if we have any outlier

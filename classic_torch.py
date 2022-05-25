@@ -58,7 +58,7 @@ model = int(args.model)
 # same = args.same
 
 if model == 0:
-    # token='1642562823'
+    token = '1652364862'
     if depth == 0:
         agent = DDPG_Agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
                            batch_size=batch_size, n_actions=1, token=token, update_freq=update_freq, idx=idx, eval=eval)
@@ -67,7 +67,7 @@ if model == 0:
                              batch_size=batch_size, n_actions=3, token=token, update_freq=update_freq, idx=idx,
                              eval=eval)
 elif model == 1:
-    # token='1652051719'
+    # token = '1652318402'
     if depth == 0:
         agent = TD3_agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
                           batch_size=batch_size, n_actions=1, token=token, update_freq=update_freq, idx=idx, eval=eval)
@@ -135,11 +135,12 @@ cuda_idx = 'cuda:' + idx
 
 device = T.device(cuda_idx if T.cuda.is_available() else 'cpu')
 if eval:
+    print(f'testing with {token} in model {model} ')
     agent.load_models()
     # token += same
 else:
     np.random.seed(0)
-   
+
 for i in range(1000):
     # random initial amount and shape/size
     mypot = np.random.randint(5)
@@ -204,7 +205,7 @@ for i in range(1000):
 
     if i > 100:
         print('episode ', i, 'score %.2f' % score,
-                'trailing 100 games avg %.3f' % np.mean(score_history[-100:]))
+              'trailing 100 games avg %.3f' % np.mean(score_history[-100:]))
     print("-------------------")
 
 # logging
@@ -234,13 +235,9 @@ if not eval:
     with open(path3, 'wb') as f:
         np.save(f, np.array(critic_loss_history))
     pl = np.zeros((1, 3))
-    # action_history = np.array(action_history)
-    # for i in range(len(action_history)):
-    # pl = np.concatenate((pl, [action_history[i]]))
+
     with open(path4, 'wb') as f:
         np.save(f, np.array(actor_loss_history))
-
- 
 
 with open(path5, 'wb') as f:
     np.save(f, np.array(outlier_history))
@@ -248,4 +245,3 @@ with open(path5, 'wb') as f:
 with open(path6, 'wb') as f:
     np.save(f, np.array(reward_history))
 
-# print(init_history, num_step)
