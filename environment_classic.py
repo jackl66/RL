@@ -82,7 +82,7 @@ class classic_coppelia:
         self.velocity_pool = [-0.75, - 0.7, -0.65, -0.6]
         self.height_change_pool = np.arange(start=0.02, stop=0.22, step=0.02)
 
-        self.target_container_scale_factor_pool = [0.55, 0.65, 0.75]
+        self.target_container_scale_factor_pool = [0.55, 0.65]
         self.height_scale_factor_pool = [2.25, 2, 1.75, 1.5]
 
         self.ori_rim = [-(9.65 - 0.75) / 10, (5.1949 + 0.80183 / 2) / 10]
