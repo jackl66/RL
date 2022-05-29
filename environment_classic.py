@@ -79,12 +79,11 @@ class classic_coppelia:
         self.velocity_pool = [-0.75, - 0.7, -0.65, -0.6, -0.55, -0.5, -0.45, -0.4, -0.35, -0.3]
 
         # shrink to only test hard cases
-        # self.velocity_pool = [-0.75, - 0.7, -0.65, -0.6]
-        # self.height_change_pool = np.arange(start=0.02, stop=0.22, step=0.02)
-        self.height_change_pool = np.array([0.18, 0.2])
+        self.height_change_pool = np.arange(start=0.02, stop=0.22, step=0.02)
+        # self.height_change_pool = np.array([0.18, 0.2])
 
         self.target_container_scale_factor_pool = [0.55, 0.65]
-        self.height_scale_factor_pool = [2.25, 2, 1.75, 1.5]
+        self.height_scale_factor_pool = [2.25, 2]
 
         self.ori_rim = [-(9.65 - 0.75) / 10, (5.1949 + 0.80183 / 2) / 10]
 
@@ -134,22 +133,22 @@ class classic_coppelia:
         self.original_y_offset = -0.085 * self.width_scale
 
         # the height of the rim is fixed for each episode
-        height_idx = np.random.randint(0, high=2)
-        # height_idx = 9
+        height_idx = np.random.randint(8, high=10)
+
         height = self.height_change_pool[height_idx]
         old_height = height
-        height_idx += 9
+        # height_idx += 9
         height += 9.4118e-02 * self.height_scale
 
         # when we use the first three models means we only want to change the y
         # if self.model < 3:
-        pouring_idx = np.random.randint(0, high=4)
+        pouring_idx = np.random.randint(0, high=10)
         # pouring_idx = 0
 
         self.pouring_speed = self.velocity_pool[pouring_idx]
 
         regression = self.regressions[pouring_idx]
-        y_displacement = regression[0] * height_idx + regression[1]
+        y_displacement = regression[0] * (height_idx+1) + regression[1]
 
         if y_displacement < self.original_y_offset:
             y_displacement = abs(y_displacement - self.original_y_offset)
@@ -159,14 +158,14 @@ class classic_coppelia:
 
         # # todo 0.01 diff between 1.40 and 1.48
 
-        y_displacement -= (1.4007e-01) * 0.5 * (1 - self.width_scale) +0.05
+        y_displacement -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.005
 
         print(f'v {self.pouring_speed}, h {height}, old h {old_height}, offset {y_displacement}, old y {old_y},',
               f'shrink factor {self.width_scale}, height scale {self.height_scale}, num obj {self.num_object}')
 
         # update the bound based on the scale
         self.bound = np.array(
-            [self.target_container_left_rim + abs(y_displacement) + 0.02 + (1.4007e-01) * 0.5 * (1 - self.width_scale),
+            [self.target_container_left_rim + abs(y_displacement) + 0.02 + (1.5007e-01) * 0.5 * (1 - self.width_scale),
              self.target_container_left_rim + 0.005, 0.66901, 0.85954])
 
         self.clientID = sim.simxStart('127.0.0.1', self.port, True, True, 5000, 5)
@@ -369,6 +368,7 @@ class classic_coppelia:
             # print(123)
             penalty += 1
             self.new_pose[0] = self.bound[1]
+
         # we won't change height for now
         # if self.new_pose[1] <= self.bound[2]:
         #     penalty += 1
@@ -514,7 +514,7 @@ class classic_coppelia:
         if not self.done:
             if episode < 7 and not self.eval:
                 actions[0] = 0
-            elif (episode > 7 and not self.eval) or self.eval:
+            elif (10 > episode > 7 and not self.eval) or self.eval:
                 actions[0] /= 10
                 # move the end effector to target position,
                 # for 1D models, action's shape (1,) = (displacement_y)
