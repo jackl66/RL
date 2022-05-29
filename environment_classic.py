@@ -76,10 +76,10 @@ class classic_coppelia:
         self.pdf = np.zeros(7)
         self.same = int(same)
         # self.target_container_scale_factor_pool = [0.75, 0.8, 0.85, 0.9, 0.95, 1]
-        # self.velocity_pool = [-0.75, - 0.7, -0.65, -0.6, -0.55, -0.5, -0.45, -0.4, -0.35, -0.3]
+        self.velocity_pool = [-0.75, - 0.7, -0.65, -0.6, -0.55, -0.5, -0.45, -0.4, -0.35, -0.3]
 
         # shrink to only test hard cases
-        self.velocity_pool = [-0.75, - 0.7, -0.65, -0.6]
+        # self.velocity_pool = [-0.75, - 0.7, -0.65, -0.6]
         # self.height_change_pool = np.arange(start=0.02, stop=0.22, step=0.02)
         self.height_change_pool = np.array([0.18, 0.2])
 
@@ -159,7 +159,7 @@ class classic_coppelia:
 
         # # todo 0.01 diff between 1.40 and 1.48
 
-        y_displacement -= (1.4007e-01) * 0.5 * (1 - self.width_scale) - 0.005
+        y_displacement -= (1.4007e-01) * 0.5 * (1 - self.width_scale) +0.05
 
         print(f'v {self.pouring_speed}, h {height}, old h {old_height}, offset {y_displacement}, old y {old_y},',
               f'shrink factor {self.width_scale}, height scale {self.height_scale}, num obj {self.num_object}')
