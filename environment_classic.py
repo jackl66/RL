@@ -81,7 +81,7 @@ class classic_coppelia:
         # shrink to only test hard cases
         self.velocity_pool = [-0.75, - 0.7, -0.65, -0.6]
         # self.height_change_pool = np.arange(start=0.02, stop=0.22, step=0.02)
-        self.height_change_pool = np.array([0.18,0.2])
+        self.height_change_pool = np.array([0.18, 0.2])
 
         self.target_container_scale_factor_pool = [0.55, 0.65]
         self.height_scale_factor_pool = [2.25, 2, 1.75, 1.5]
@@ -134,9 +134,11 @@ class classic_coppelia:
         self.original_y_offset = -0.085 * self.width_scale
 
         # the height of the rim is fixed for each episode
-        height_idx = np.random.randint(0, high=2) + 8
+        height_idx = np.random.randint(0, high=2)
         # height_idx = 9
         height = self.height_change_pool[height_idx]
+        old_height = height
+        height_idx += 9
         height += 9.4118e-02 * self.height_scale
 
         # when we use the first three models means we only want to change the y
@@ -147,7 +149,7 @@ class classic_coppelia:
         self.pouring_speed = self.velocity_pool[pouring_idx]
 
         regression = self.regressions[pouring_idx]
-        y_displacement = regression[0] * (height_idx + 1) + regression[1]
+        y_displacement = regression[0] * height_idx + regression[1]
 
         if y_displacement < self.original_y_offset:
             y_displacement = abs(y_displacement - self.original_y_offset)
@@ -159,7 +161,7 @@ class classic_coppelia:
 
         y_displacement -= (1.4007e-01) * 0.5 * (1 - self.width_scale) - 0.005
 
-        print(f'v {self.pouring_speed}, h {height}, offset {y_displacement}, old y {old_y},',
+        print(f'v {self.pouring_speed}, h {height}, old h {old_height}, offset {y_displacement}, old y {old_y},',
               f'shrink factor {self.width_scale}, height scale {self.height_scale}, num obj {self.num_object}')
 
         # update the bound based on the scale
