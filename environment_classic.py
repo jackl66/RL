@@ -80,7 +80,8 @@ class classic_coppelia:
 
         # shrink to only test hard cases
         self.velocity_pool = [-0.75, - 0.7, -0.65, -0.6]
-        self.height_change_pool = np.arange(start=0.02, stop=0.22, step=0.02)
+        # self.height_change_pool = np.arange(start=0.02, stop=0.22, step=0.02)
+        self.height_change_pool = np.array([0.18,0.2])
 
         self.target_container_scale_factor_pool = [0.55, 0.65]
         self.height_scale_factor_pool = [2.25, 2, 1.75, 1.5]
@@ -133,7 +134,7 @@ class classic_coppelia:
         self.original_y_offset = -0.085 * self.width_scale
 
         # the height of the rim is fixed for each episode
-        height_idx = np.random.randint(0, high=10)
+        height_idx = np.random.randint(0, high=2) + 8
         # height_idx = 9
         height = self.height_change_pool[height_idx]
         height += 9.4118e-02 * self.height_scale
