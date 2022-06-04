@@ -1,6 +1,7 @@
 import time
 import argparse as ap
 from environment_classic import classic_coppelia
+from environment_sin import sin_coppelia
 import matplotlib.pyplot as plt
 
 # ************** DDPG *******************
@@ -35,7 +36,7 @@ parser.add_argument('cuda', help="use which gpu", choices={'0', '1'})
 parser.add_argument('depth', help="use vision or not", choices={'0', '1'})
 parser.add_argument('model', help='DDPG,TD3,DQN', choices={'0', '1', '2', '3', '4', '5', '6', '7'})
 parser.add_argument('eval', help="eval or train", choices={'0', '1'})
-
+parser.add_argument('sin', help="use sin or not", choices={'0', '1'})
 args = parser.parse_args()
 
 # alpha = float(args.alpha)
@@ -54,7 +55,7 @@ update_freq = int(args.update_freq)
 eval = bool(int(args.eval))
 idx = args.cuda
 model = int(args.model)
-
+sin = args.sin
 # same = args.same
 
 if model == 0:
@@ -67,7 +68,7 @@ if model == 0:
                              batch_size=batch_size, n_actions=3, token=token, update_freq=update_freq, idx=idx,
                              eval=eval)
 elif model == 1:
-    # token = '1652318402'
+    # token = '1653859293'
     if depth == 0:
         agent = TD3_agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
                           batch_size=batch_size, n_actions=1, token=token, update_freq=update_freq, idx=idx, eval=eval)
@@ -111,7 +112,11 @@ else:
                         batch_size=batch_size, n_actions=9, token=token, update_freq=update_freq, idx=idx, eval=eval)
 
 # start coppelia connection
-env = classic_coppelia(depth, token, port=port, model=model, eval=eval, )
+if sin == '0':
+    env = classic_coppelia(depth, token, port=port, model=model, eval=eval, )
+else:
+    print('using sin wave')
+    env = sin_coppelia(depth, token, port=port, model=model, eval=eval, )
 # same=same)
 
 TD_error = []
@@ -120,6 +125,7 @@ action_history = []
 actor_loss_history = []
 critic_loss_history = []
 outlier_history = []
+pour_out_bins = []
 patient = 200
 warm_up = 20
 best_score = -1000
@@ -135,6 +141,7 @@ cuda_idx = 'cuda:' + idx
 
 device = T.device(cuda_idx if T.cuda.is_available() else 'cpu')
 if eval:
+    np.random.seed(0)
     print(f'testing with {token} in model {model} ')
     agent.load_models()
     # token += same
@@ -157,8 +164,10 @@ for i in range(1000):
     ratio = T.tensor(ratio, dtype=T.float).to(device)
 
     obs = env.reset(mypot, obj_shape, size)
+
     if eval:
         agent.noise.reset()
+
     done = False
     score = 0
     while not done:
@@ -184,8 +193,10 @@ for i in range(1000):
         score += reward
         obs = new_state
 
-    num_outlier = env.finish()
-    print(f'num_outlier {num_outlier}')
+    num_outlier, num_poured_out = env.finish()
+    print(f'num_outlier {num_outlier}, total poured out {num_poured_out}')
+    if sin == '1':
+        pour_out_bins.append(num_poured_out)
     outlier_history.append(num_outlier)
     score_history.append(score)
     avg_score = np.mean(score_history[-100:])
@@ -245,3 +256,7 @@ with open(path5, 'wb') as f:
 with open(path6, 'wb') as f:
     np.save(f, np.array(reward_history))
 
+if sin == '1':
+    path7 = os.path.join(dir_path, 'poured.npy')
+    with open(path7, 'wb') as f:
+        np.save(f, np.array(pour_out_bins))
