@@ -141,12 +141,12 @@ cuda_idx = 'cuda:' + idx
 
 device = T.device(cuda_idx if T.cuda.is_available() else 'cpu')
 if eval:
-    np.random.seed(0)
+
     print(f'testing with {token} in model {model} ')
     agent.load_models()
     # token += same
-else:
-    np.random.seed(0)
+
+np.random.seed()
 
 for i in range(1000):
     # random initial amount and shape/size
