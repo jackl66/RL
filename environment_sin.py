@@ -97,9 +97,8 @@ class sin_coppelia:
                             [-0.0128810468948249, -0.0373327018636646], [-0.0136431304794369, -0.03255832213344]]
         self.time = np.arange(0, 127 * 4)
 
-        self.period_adjustor = [[1.29, 1.31, 1.33], [1.29, 1.31, 1.35], [1.31, 1.34, 1.35], [1.33, 1.36, 1.39]]
-        self.sin = [[0.83, -1.2], [0.63, -0.8], [0.53, -0.6], [0.315, -0.4]]
-
+        self.period_adjustor = [[1.43, 1.45, 1.49], [1.29, 1.31, 1.35], [1.31, 1.34, 1.35], [1.41, 1.43, 1.45]]
+        self.sin = [[0.83, -1.2], [0.63, -0.8], [0.53, -0.6], [0.73, -1]]
     def reset(self, num_object, obj_shape, size):
 
         self.done = False
@@ -147,12 +146,7 @@ class sin_coppelia:
         # b is for smoothing it
         # c is Amplitude
 
-        # todo test again,
-        # todo need to move the arm much closer to the rim
-        # todo overwrite the offset when cup has rotated enough and move it towards the rim
-        # the bigger the value, the shorter the period
-        self.period_adjustor = [[1.43, 1.45, 1.49], [1.29, 1.31, 1.35], [1.31, 1.34, 1.35], [1.41, 1.43, 1.45]]
-        self.sin = [[0.83, -1.2], [0.63, -0.8], [0.53, -0.6], [0.73, -1]]
+        # the bigger the value, the shorter the period       
         amp_idx = np.random.randint(0, high=4)
         # amp_idx = 3
         period_scale_idx = np.random.randint(0, high=3)
@@ -189,14 +183,8 @@ class sin_coppelia:
             # temp = abs(temp-self.original_y_offset)
         else:
             y_displacement = 0
-
-            # old_y = y_displacement
-
             # # todo 0.01 diff between 1.40 and 1.48
-            # -0.7882819175720215
-            # 0.13544883242797845
-
-            y_displacement -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.05
+        y_displacement -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.005
 
         print(f'old height {old_height}, h {height}, amp {amp}, period {period}, period_scale {period_scale},',
               f'shrink factor {self.width_scale}, height scale {self.height_scale}, num obj {self.num_object}')
