@@ -97,8 +97,9 @@ class sin_coppelia:
                             [-0.0128810468948249, -0.0373327018636646], [-0.0136431304794369, -0.03255832213344]]
         self.time = np.arange(0, 127 * 4)
 
-        self.period_adjustor = [[1.43, 1.45, 1.49], [1.29, 1.31, 1.35], [1.31, 1.34, 1.35], [1.41, 1.43, 1.45]]
-        self.sin = [[0.83, -1.2], [0.63, -0.8], [0.53, -0.6], [0.73, -1]]
+        self.period_adjustor = [[1.43, 1.45, 1.49], [1.39, 1.41, 1.43], [1.27, 1.29, 1.31], [1.15, 1.17, 1.19]]
+        self.sin = [[0.83, -1.2], [0.73, -1], [0.63, -0.8], [0.53, -0.6]]
+
     def reset(self, num_object, obj_shape, size):
 
         self.done = False
@@ -113,7 +114,7 @@ class sin_coppelia:
         else:
             self.num_object = self.init_amount[num_object]
             self.size = self.obj_size[size]
-        # self.num_object = 40
+        # self.num_object = 30
 
         # todo need to change in the future
         self.size = self.obj_size[1]
@@ -148,9 +149,10 @@ class sin_coppelia:
 
         # the bigger the value, the shorter the period       
         amp_idx = np.random.randint(0, high=4)
-        # amp_idx = 3
+        # amp_idx = 2
         period_scale_idx = np.random.randint(0, high=3)
         # period_scale_idx = 0
+
         period = self.sin[amp_idx][0]
         amp = self.sin[amp_idx][1]
         period_scale = self.period_adjustor[amp_idx][period_scale_idx]
@@ -161,20 +163,17 @@ class sin_coppelia:
         height = self.height_change_pool[height_idx]
         old_height = height
         height += 9.4118e-02 * self.height_scale
-        large_velocity_bound = 0
-        # now the max speed is chosen by amp
-        # pouring_idx = np.random.randint(0, high=10)
-        # self.pouring_speed = self.velocity_pool[pouring_idx]
+
         if amp != -0.8 and amp != -1.2 and amp != -1:
             pouring_idx = self.velocity_pool.index(amp)
         else:
             pouring_idx = 0
-            large_velocity_bound = 0.01
+        large_velocity_bound = 0.01 * (5 - amp_idx + num_object)
+
         # the offset is the maximum offset it can go
         # but since the velocity is much slower than the max for the most of the time
         # the offset for the warm-up episode will be a linear transformation
         # that start from left rim + 0.005 to offset
-
         regression = self.regressions[pouring_idx]
         y_displacement = regression[0] * (height_idx + 1) + regression[1]
 
@@ -183,11 +182,11 @@ class sin_coppelia:
             # temp = abs(temp-self.original_y_offset)
         else:
             y_displacement = 0
-            # # todo 0.01 diff between 1.40 and 1.48
+            # todo 0.01 diff between 1.40 and 1.48
         y_displacement -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.005
 
-        print(f'old height {old_height}, h {height}, amp {amp}, period {period}, period_scale {period_scale},',
-              f'shrink factor {self.width_scale}, height scale {self.height_scale}, num obj {self.num_object}')
+        print(f'old height {old_height}, h {height}, amp {amp}, safe bound {large_velocity_bound} period {period},'
+              f'period_scale {period_scale}, shrink factor {self.width_scale}, height scale {self.height_scale}, num obj {self.num_object}')
 
         # update the bound based on the scale
         self.bound = np.array(
@@ -460,7 +459,7 @@ class sin_coppelia:
             self.backward = True
         # exception handler
         if position6 < -3.3 and self.done is False or (self.backward and position6 > -1.1):
-            print('done by now')
+            print(f'done by now, took {self.iteration}')
             self.done = True
 
         # cross-section view
@@ -636,12 +635,6 @@ class sin_coppelia:
         # time out penalty
         self.iteration += 1
 
-        # if self.iteration > 250:
-        #     self.done = True
-        #     print('took too long')
-        #     reward -= 200
-        #     self.reward_history[7] -= 200
-
         # +10 for each object fall into the target area
         # +50 if the error is less than 5%
         # -20 for each that is out of the target box
@@ -664,7 +657,7 @@ class sin_coppelia:
                 ret, state, forceVector2, torqueVector = sim.simxReadForceSensor(self.clientID, self.box,
                                                                                  sim.simx_opmode_buffer)
                 total_weight = np.median(total_reading)
-                print(total_weight, 999)
+                # print(total_weight, 999)
                 total_weight = -1 * total_weight - self.big_box_weight
                 outlier_weight = total_weight - target_weight
                 self.num_pour_out = round(total_weight / self.single_block_weight)
@@ -691,7 +684,11 @@ class sin_coppelia:
                 print("done is", self.done)
         # we want to make the final reward before termination
         done = self.done * self.final_reward
-
+        if self.iteration > 500:
+            self.done = True
+            print(f'took too long, {self.iteration}')
+            reward -= 200
+            self.reward_history[7] -= 200
         return new_state, reward, done
 
     def finish(self):
