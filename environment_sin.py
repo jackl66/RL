@@ -97,8 +97,8 @@ class sin_coppelia:
                             [-0.0128810468948249, -0.0373327018636646], [-0.0136431304794369, -0.03255832213344]]
         self.time = np.arange(0, 127 * 4)
 
-        self.period_adjustor = [[1.29, 1.31, 1.35], [1.31, 1.34, 1.35], [1.33, 1.36, 1.39]]
-        self.sin = [[0.63, -0.8], [0.53, -0.6], [0.315, -0.4]]
+        self.period_adjustor = [[1.29, 1.31, 1.33], [1.29, 1.31, 1.35], [1.31, 1.34, 1.35], [1.33, 1.36, 1.39]]
+        self.sin = [[0.83, -1.2], [0.63, -0.8], [0.53, -0.6], [0.315, -0.4]]
 
     def reset(self, num_object, obj_shape, size):
 
@@ -151,12 +151,12 @@ class sin_coppelia:
         # todo need to move the arm much closer to the rim
         # todo overwrite the offset when cup has rotated enough and move it towards the rim
         # the bigger the value, the shorter the period
-        self.period_adjustor = [[1.29, 1.31, 1.35], [1.15, 1.18, 1.21], [1.33, 1.36, 1.39]]
-        self.sin = [[0.63, -0.8], [0.53, -0.6], [0.315, -0.4]]
-        amp_idx = np.random.randint(0, high=3)
-        # amp_idx = 2
+        self.period_adjustor = [[1.43, 1.45, 1.49], [1.29, 1.31, 1.35], [1.31, 1.34, 1.35], [1.41, 1.43, 1.45]]
+        self.sin = [[0.83, -1.2], [0.63, -0.8], [0.53, -0.6], [0.73, -1]]
+        amp_idx = np.random.randint(0, high=4)
+        # amp_idx = 3
         period_scale_idx = np.random.randint(0, high=3)
-        # period_scale_idx = 2
+        # period_scale_idx = 0
         period = self.sin[amp_idx][0]
         amp = self.sin[amp_idx][1]
         period_scale = self.period_adjustor[amp_idx][period_scale_idx]
@@ -167,27 +167,20 @@ class sin_coppelia:
         height = self.height_change_pool[height_idx]
         old_height = height
         height += 9.4118e-02 * self.height_scale
-
+        large_velocity_bound = 0
         # now the max speed is chosen by amp
         # pouring_idx = np.random.randint(0, high=10)
         # self.pouring_speed = self.velocity_pool[pouring_idx]
-        if amp != -0.8:
+        if amp != -0.8 and amp != -1.2 and amp != -1:
             pouring_idx = self.velocity_pool.index(amp)
         else:
             pouring_idx = 0
+            large_velocity_bound = 0.01
         # the offset is the maximum offset it can go
         # but since the velocity is much slower than the max for the most of the time
         # the offset for the warm-up episode will be a linear transformation
         # that start from left rim + 0.005 to offset
-        linear_transformation = np.arange(pouring_idx, len(self.velocity_pool))
 
-        # this list will hold the theoretical offset for some points in the sin velocity
-        re = [-0.0345, -0.1934]
-        emp = []
-        # self.sin_y = []
-        # for idx in linear_transformation:
-        #     temp = re[0] * self.velocity_pool[idx] + re[1]
-        #
         regression = self.regressions[pouring_idx]
         y_displacement = regression[0] * (height_idx + 1) + regression[1]
 
@@ -196,6 +189,7 @@ class sin_coppelia:
             # temp = abs(temp-self.original_y_offset)
         else:
             y_displacement = 0
+
             # old_y = y_displacement
 
             # # todo 0.01 diff between 1.40 and 1.48
@@ -203,19 +197,14 @@ class sin_coppelia:
             # 0.13544883242797845
 
             y_displacement -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.05
-        #     temp -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.05
-        #     emp.append(temp)
-        #     self.sin_y.append(y_displacement)
-        # print(self.sin_y, amp)
-        # print(emp)
-        # return
+
         print(f'old height {old_height}, h {height}, amp {amp}, period {period}, period_scale {period_scale},',
               f'shrink factor {self.width_scale}, height scale {self.height_scale}, num obj {self.num_object}')
 
         # update the bound based on the scale
         self.bound = np.array(
             [self.target_container_left_rim + abs(y_displacement) + 0.02 + (1.5007e-01) * 0.5 * (1 - self.width_scale),
-             self.target_container_left_rim, 0.66901, 0.85954])
+             self.target_container_left_rim + large_velocity_bound, 0.66901, 0.85954])
 
         self.clientID = sim.simxStart('127.0.0.1', self.port, True, True, 5000, 5)
 
@@ -315,7 +304,7 @@ class sin_coppelia:
         ret, state, forceVector2, torqueVector = sim.simxReadForceSensor(self.clientID, self.box,
                                                                          sim.simx_opmode_buffer)
         self.big_box_weight = -1 * forceVector2[2]
-        print(self.big_box_weight)
+
         # prepare data for the first observation
         new_state = []
 
