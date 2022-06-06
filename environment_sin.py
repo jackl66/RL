@@ -590,7 +590,7 @@ class sin_coppelia:
                     outlier_reading.append(forceVector2[2])
                     ret, state, forceVector3, torqueVector = sim.simxReadForceSensor(self.clientID, self.box,
                                                                                      sim.simx_opmode_buffer)
-                    total_reading.append(forceVector2[3])
+                    total_reading.append(forceVector3[3])
 
                 self.triggerSim()
                 temp += 1
