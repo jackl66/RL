@@ -184,13 +184,13 @@ class sin_coppelia:
             y_displacement = 0
             # todo 0.01 diff between 1.40 and 1.48
         y_displacement -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.005
-
+        print(y_displacement)
         print(f'old height {old_height}, h {height}, amp {amp}, safe bound {large_velocity_bound} period {period},'
               f'period_scale {period_scale}, shrink factor {self.width_scale}, height scale {self.height_scale}, num obj {self.num_object}')
 
         # update the bound based on the scale
         self.bound = np.array(
-            [self.target_container_left_rim + abs(y_displacement) + 0.02 + (1.5007e-01) * 0.5 * (1 - self.width_scale),
+            [self.target_container_left_rim + 0.2 + (1.5007e-01) * 0.5 * (1 - self.width_scale),
              self.target_container_left_rim + large_velocity_bound, 0.66901, 0.85954])
 
         self.clientID = sim.simxStart('127.0.0.1', self.port, True, True, 5000, 5)
@@ -588,9 +588,9 @@ class sin_coppelia:
                     ret, state, forceVector2, torqueVector = sim.simxReadForceSensor(self.clientID, self.target,
                                                                                      sim.simx_opmode_buffer)
                     outlier_reading.append(forceVector2[2])
-                    ret, state, forceVector2, torqueVector = sim.simxReadForceSensor(self.clientID, self.box,
+                    ret, state, forceVector3, torqueVector = sim.simxReadForceSensor(self.clientID, self.box,
                                                                                      sim.simx_opmode_buffer)
-                    total_reading.append(forceVector2[2])
+                    total_reading.append(forceVector2[3])
 
                 self.triggerSim()
                 temp += 1
@@ -668,12 +668,12 @@ class sin_coppelia:
                     if self.num_outlier > self.num_pour_out:
                         self.num_outlier = self.num_pour_out
                     # here we use percentage as the penalty
-                    outlier_penalty = outlier_weight / target_weight * 100
+                    outlier_penalty = outlier_weight / total_weight * 10000
                     self.reward_history[4] -= outlier_penalty
 
                 # if we have anything in the target area
                 if self.num_pour_out > self.num_outlier:
-                    hit_reward = (1 - outlier_weight / target_weight) * 50
+                    hit_reward = (1 - outlier_weight / total_weight) * 50000
                     self.reward_history[5] += hit_reward
 
                     if self.num_outlier / self.num_pour_out < 0.05:
