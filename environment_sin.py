@@ -168,7 +168,7 @@ class sin_coppelia:
             pouring_idx = self.velocity_pool.index(amp)
         else:
             pouring_idx = 0
-        large_velocity_bound = 0.08 * (5 - amp_idx + num_object)
+        large_velocity_bound = 0.01 * (5 - amp_idx + num_object)+0.005
 
         # the offset is the maximum offset it can go
         # but since the velocity is much slower than the max for the most of the time
