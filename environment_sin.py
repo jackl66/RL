@@ -168,7 +168,7 @@ class sin_coppelia:
             pouring_idx = self.velocity_pool.index(amp)
         else:
             pouring_idx = 0
-        large_velocity_bound = 0.01 * (5 - amp_idx + num_object)
+        large_velocity_bound = 0.08 * (5 - amp_idx + num_object)
 
         # the offset is the maximum offset it can go
         # but since the velocity is much slower than the max for the most of the time
@@ -544,9 +544,9 @@ class sin_coppelia:
                 actions[0] = -0.005
                 if not self.backward and position6 < -1.3:
                     self.py_moveToPose([actions, 0], 1)
-
-            elif (10 > episode > 7 and not self.eval) or self.eval:
-                actions[0] /= 10
+            else:
+                if (10 > episode > 7 and not self.eval) or self.eval:
+                    actions[0] /= 10
                 # move the end effector to target position,
                 # for 1D models, action's shape (1,) = (displacement_y)
                 # for 2D models, action's shape (2,) = (displacement_y, delta v)
@@ -555,16 +555,13 @@ class sin_coppelia:
                 else:
                     penalty = self.py_moveToPose([actions[0], 0], 1)
 
-                    if position6 < -1:
-                        D_speed = actions[1]
-                        self.pouring_speed += D_speed
-                # wait for the arm to reach the target position
-                force_out = 0  # exception handler
-                while (abs(self.old_y - self.new_pose[0]) > 0.005
-                       or abs(self.old_z - self.new_pose[1]) > 0.005) and force_out < 20:
-                    self.triggerSim()
-                    force_out += 1
-                    self.py_get_pose()
+            # wait for the arm to reach the target position
+            force_out = 0  # exception handler
+            while (abs(self.old_y - self.new_pose[0]) > 0.005
+                    or abs(self.old_z - self.new_pose[1]) > 0.005) and force_out < 20:
+                self.triggerSim()
+                force_out += 1
+                self.py_get_pose()
             self.pouring_speed = self.amplitude[self.iteration]
             # print(self.pouring_speed, self.iteration)
             errorCode = sim.simxSetJointTargetVelocity(self.clientID, self.joint6, self.pouring_speed,
@@ -658,19 +655,19 @@ class sin_coppelia:
                 total_weight = -1 * total_weight - self.big_box_weight
                 outlier_weight = total_weight - target_weight
                 self.num_pour_out = round(total_weight / self.single_block_weight)
+
                 # if we have any outlier
                 if outlier_weight > 0:
                     self.num_outlier = round(outlier_weight / self.single_block_weight)
                     # at least we don't want impossible number
                     if self.num_outlier > self.num_pour_out:
                         self.num_outlier = self.num_pour_out
-                    # here we use percentage as the penalty
-                    outlier_penalty = outlier_weight / total_weight * 10000
+                    outlier_penalty = self.num_outlier * 20
                     self.reward_history[4] -= outlier_penalty
 
                 # if we have anything in the target area
                 if self.num_pour_out > self.num_outlier:
-                    hit_reward = (1 - outlier_weight / total_weight) * 50000
+                    hit_reward = (self.num_pour_out - self.num_outlier) * 10
                     self.reward_history[5] += hit_reward
 
                     if self.num_outlier / self.num_pour_out < 0.05:
@@ -679,6 +676,28 @@ class sin_coppelia:
                 self.final_reward = True
                 reward = reward + hit_reward - outlier_penalty
                 print("done is", self.done)
+
+                # # if we have any outlier
+                # if outlier_weight > 0:
+                #     self.num_outlier = round(outlier_weight / self.single_block_weight)
+                #     # at least we don't want impossible number
+                #     if self.num_outlier > self.num_pour_out:
+                #         self.num_outlier = self.num_pour_out
+                #     # here we use percentage as the penalty
+                #     outlier_penalty = outlier_weight / total_weight * 10000
+                #     self.reward_history[4] -= outlier_penalty
+
+                # # if we have anything in the target area
+                # if self.num_pour_out > self.num_outlier:
+                #     hit_reward = (1 - outlier_weight / total_weight) * 50000
+                #     self.reward_history[5] += hit_reward
+
+                #     if self.num_outlier / self.num_pour_out < 0.05:
+                #         hit_reward += 100
+                #         self.reward_history[6] += 100
+                # self.final_reward = True
+                # reward = reward + hit_reward - outlier_penalty
+                # print("done is", self.done)
         # we want to make the final reward before termination
         done = self.done * self.final_reward
         if self.iteration > 500:
