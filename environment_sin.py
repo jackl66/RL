@@ -149,7 +149,7 @@ class sin_coppelia:
 
         # the bigger the value, the shorter the period       
         amp_idx = np.random.randint(0, high=4)
-        # amp_idx = 2
+        # amp_idx = 0
         period_scale_idx = np.random.randint(0, high=3)
         # period_scale_idx = 0
 
@@ -163,12 +163,13 @@ class sin_coppelia:
         height = self.height_change_pool[height_idx]
         old_height = height
         height += 9.4118e-02 * self.height_scale
-
+        # todo plot the action and coordinate
+        # todo change the boundary to a bigger one
         if amp != -0.8 and amp != -1.2 and amp != -1:
             pouring_idx = self.velocity_pool.index(amp)
         else:
             pouring_idx = 0
-        large_velocity_bound = 0.01 * (5 - amp_idx + num_object)+0.005
+        self.large_velocity_bound = 0.01 * (5 - amp_idx + num_object) + 0.005
 
         # the offset is the maximum offset it can go
         # but since the velocity is much slower than the max for the most of the time
@@ -184,14 +185,14 @@ class sin_coppelia:
             y_displacement = 0
             # todo 0.01 diff between 1.40 and 1.48
         y_displacement -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.005
-         
-        print(f'old height {old_height}, h {height}, amp {amp}, safe bound {large_velocity_bound} period {period},'
+
+        print(f'old height {old_height}, h {height}, amp {amp}, safe bound {self.large_velocity_bound} period {period},'
               f'period_scale {period_scale}, shrink factor {self.width_scale}, height scale {self.height_scale}, num obj {self.num_object}')
 
         # update the bound based on the scale
         self.bound = np.array(
             [self.target_container_left_rim + 0.1 + (1.5007e-01) * 0.5 * (1 - self.width_scale),
-             self.target_container_left_rim + large_velocity_bound, 0.66901, 0.85954])
+             self.target_container_left_rim + 0.005, 0.66901, 0.85954])
 
         self.clientID = sim.simxStart('127.0.0.1', self.port, True, True, 5000, 5)
 
@@ -542,6 +543,8 @@ class sin_coppelia:
 
             if episode < 7 and not self.eval:
                 actions[0] = -0.005
+                if abs(self.target_container_left_rim - (self.old_y + actions[0])) < self.large_velocity_bound:
+                    actions[0] = 0
                 if not self.backward and position6 < -1.3:
                     self.py_moveToPose([actions, 0], 1)
             else:
@@ -557,8 +560,7 @@ class sin_coppelia:
 
             # wait for the arm to reach the target position
             force_out = 0  # exception handler
-            while (abs(self.old_y - self.new_pose[0]) > 0.005
-                    or abs(self.old_z - self.new_pose[1]) > 0.005) and force_out < 20:
+            while abs(self.old_y - self.new_pose[0]) > 0.05 and force_out < 20:
                 self.triggerSim()
                 force_out += 1
                 self.py_get_pose()
@@ -646,10 +648,10 @@ class sin_coppelia:
 
                 # read the force sensor to determine in/out: total-target= # outside
                 # things in the target area, including the target box
-          
+
                 target_weight = np.median(outlier_reading)
                 target_weight = -1 * target_weight - self.target_box_weight
-               
+
                 total_weight = np.median(total_reading)
                 # print(total_weight, 999)
                 total_weight = -1 * total_weight - self.big_box_weight
