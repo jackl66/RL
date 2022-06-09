@@ -169,7 +169,7 @@ class sin_coppelia:
             pouring_idx = self.velocity_pool.index(amp)
         else:
             pouring_idx = 0
-        self.large_velocity_bound = 0.01 * (5 - amp_idx + num_object) + 0.005
+        self.large_velocity_bound = 0.01 * (5 - amp_idx + num_object) + 0.005 - 0.02
 
         # the offset is the maximum offset it can go
         # but since the velocity is much slower than the max for the most of the time
@@ -184,7 +184,7 @@ class sin_coppelia:
         else:
             y_displacement = 0
             # todo 0.01 diff between 1.40 and 1.48
-        y_displacementdisplacement -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.005
+        y_displacement -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.005
 
         print(f'old height {old_height}, h {height}, amp {amp}, safe bound {self.large_velocity_bound} period {period},'
               f'period_scale {period_scale}, shrink factor {self.width_scale}, height scale {self.height_scale}, num obj {self.num_object}')
