@@ -184,7 +184,7 @@ class sin_coppelia:
         else:
             y_displacement = 0
             # todo 0.01 diff between 1.40 and 1.48
-        y_displacement -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.005
+        y_displacementdisplacement -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.005
 
         print(f'old height {old_height}, h {height}, amp {amp}, safe bound {self.large_velocity_bound} period {period},'
               f'period_scale {period_scale}, shrink factor {self.width_scale}, height scale {self.height_scale}, num obj {self.num_object}')
@@ -192,7 +192,7 @@ class sin_coppelia:
         # update the bound based on the scale
         self.bound = np.array(
             [self.target_container_left_rim + 0.1 + (1.5007e-01) * 0.5 * (1 - self.width_scale),
-             self.target_container_left_rim + 0.005, 0.66901, 0.85954])
+             self.target_container_left_rim + self.large_velocity_bound - 0.005, 0.66901, 0.85954])
 
         self.clientID = sim.simxStart('127.0.0.1', self.port, True, True, 5000, 5)
 
@@ -543,8 +543,6 @@ class sin_coppelia:
 
             if episode < 7 and not self.eval:
                 actions[0] = -0.005
-                if abs(self.target_container_left_rim - (self.old_y + actions[0])) < self.large_velocity_bound:
-                    actions[0] = 0
                 if not self.backward and position6 < -1.3:
                     self.py_moveToPose([actions, 0], 1)
             else:
