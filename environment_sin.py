@@ -192,7 +192,7 @@ class sin_coppelia:
         # update the bound based on the scale
         self.bound = np.array(
             [self.target_container_left_rim + 0.1 + (1.5007e-01) * 0.5 * (1 - self.width_scale),
-             self.target_container_left_rim + self.large_velocity_bound - 0.01, 0.66901, 0.85954])
+             self.target_container_left_rim + self.large_velocity_bound, 0.66901, 0.85954])
 
         self.clientID = sim.simxStart('127.0.0.1', self.port, True, True, 5000, 5)
 
@@ -548,6 +548,7 @@ class sin_coppelia:
             else:
                 if (10 > episode > 7 and not self.eval) or self.eval:
                     actions[0] /= 10
+                    self.bound[1] = self.target_container_left_rim + self.large_velocity_bound - 0.01
                 # move the end effector to target position,
                 # for 1D models, action's shape (1,) = (displacement_y)
                 # for 2D models, action's shape (2,) = (displacement_y, delta v)
@@ -688,7 +689,7 @@ class sin_coppelia:
 
                 # if we have anything in the target area
                 if self.num_pour_out > self.num_outlier:
-                    hit_reward = (1 - outlier_weight / total_weight) * 50000
+                    hit_reward = (1 - outlier_weight / total_weight) * 20000
                     self.reward_history[5] += hit_reward
 
                     if self.num_outlier / self.num_pour_out < 0.05:
