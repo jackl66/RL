@@ -12,7 +12,6 @@ class CriticNetwork(nn.Module):
         super(CriticNetwork, self).__init__()
 
         self.checkpoint_file = os.path.join(chkpt_dir, name + '.zip')
-        self.checkpoint_file =  name + '.zip'
 
         fc1 = 400
         fc2 = 300
@@ -161,7 +160,6 @@ class ActorNetwork(nn.Module):
         super(ActorNetwork, self).__init__()
 
         self.checkpoint_file = os.path.join(chkpt_dir, name + '.zip')
-        self.checkpoint_file = name + '.zip'
         fc1 = 400
         fc2 = 300
 
