@@ -9,6 +9,7 @@ class TD3_agent(object):
         self.tau = tau
         self.max_action = env.action_space.high
         self.min_action = env.action_space.low
+        self.n_actions = n_actions
         self.memory = ReplayBuffer(max_size, input_dims, n_actions)
         self.batch_size = batch_size
         self.update_freq = update_freq
