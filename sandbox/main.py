@@ -3,11 +3,18 @@ import numpy as np
 from TD3_agent import TD3_agent as Agent
 from utils import plot_learning_curve
 import time
+import argparse as ap
 import os
 if __name__ == '__main__':
     token = str(round(time.time()))
     games = ['BipedalWalker-v3','LunarLanderContinuous-v2']
-    game = games[0]
+    parser = ap.ArgumentParser()
+    parser.add_argument("game", help="choose a game",
+                    choices={'1', '0'})
+    args = parser.parse_args()
+
+    idx = int(args.game)
+    game = games[idx]
     # env = gym.make(game)
     env = gym.make(game)
     print(f'{env.observation_space.shape}, {env.action_space.shape}, {token}')
@@ -44,7 +51,7 @@ if __name__ == '__main__':
                 'trailing 100 games avg %.3f' % avg_score)
     file_path = './npy/score_' + game[:3]+'.npy'
     file_path2 = './npy/avg_' + game[:3]+'.npy'
-
+    print(f'playing game {idx}')
     running_avg = np.zeros(len(score_history))
     for i in range(len(running_avg)):
         running_avg[i] = np.mean(score_history[max(0, i - 100):(i + 1)])

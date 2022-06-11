@@ -12,8 +12,9 @@ class TD3_agent(object):
         self.memory = ReplayBuffer(max_size, input_dims, n_actions)
         self.batch_size = batch_size
         self.update_freq = update_freq
-        self.count = 0
-
+        self.action_count = 0
+        self.learning_count = 0
+        self.warmup =1000
         cuda_idx = 'cuda:' + idx
         self.device = T.device(cuda_idx if T.cuda.is_available() else 'cpu')
         chkpt_dir = './checkpoint/' + str(token)
@@ -32,10 +33,24 @@ class TD3_agent(object):
         self.target_critic = CriticNetwork(beta, input_dims, n_actions,
                                            'TargetCritic', chkpt_dir=chkpt_dir, device=self.device)
 
-        self.noise = OUActionNoise(mu=np.zeros(n_actions))
+        # self.noise = OUActionNoise(mu=np.zeros(n_actions))
+        self.noise = 0.1 
         self.update_network_parameters(tau=1)
 
     def choose_action(self, observation):
+
+
+        if self.action_count < self.warmup:
+            mu = T.tensor(np.random.normal(scale=self.noise, size=(self.n_actions,)))
+        else:
+            state = T.tensor(observation, dtype=T.float).to(self.device)
+            mu = self.actor.forward(state).to(self.device)
+        mu_prime = mu + T.tensor(np.random.normal(scale=self.noise),
+                dtype=T.float).to(self.device)
+        mu_prime = T.clamp(mu_prime, self.min_action[0], self.max_action[0])
+        self.count += 1
+        return mu_prime.cpu().detach().numpy()
+
         self.actor.eval()
 
         observation = T.tensor(observation, dtype=T.float).to(self.device)
@@ -93,7 +108,7 @@ class TD3_agent(object):
         self.critic.optimizer.step()
         actor_loss = 0
         # Delayed policy updates
-        if self.count % self.update_freq == 0:
+        if self.learning_count % self.update_freq == 0:
             # Compute actor lose
             actor_loss = -self.critic.Q1(state, self.actor.forward(state))
             actor_loss = T.mean(actor_loss)
@@ -104,7 +119,7 @@ class TD3_agent(object):
 
             self.update_network_parameters()
             actor_loss = actor_loss.cpu().detach().numpy()
-        self.count += 1
+        self.learning_count += 1
 
         return critic_loss.cpu().detach().numpy(), actor_loss
 
