@@ -84,10 +84,13 @@ class TD3_agent(object):
 
         with T.no_grad():
             # Select action according to policy and add clipped noise
-            noise = (T.randn_like(action) * T.tensor(self.noise(), dtype=T.float).to(self.device)). \
-                clamp(-self.noise_clip, self.noise_clip)
-            next_action = (self.target_actor.forward(new_state) + noise).clamp(-1, 1)
-
+            # noise = (T.randn_like(action) * T.tensor(self.noise, dtype=T.float).to(self.device)). \
+            #     clamp(-self.noise_clip, self.noise_clip)
+            next_action = self.target_actor.forward(new_state)
+            next_action = next_action + \
+                T.clamp(T.tensor(np.random.normal(scale=0.2)), -0.5, 0.5)
+             # might break if elements of min and max are not all equal
+            next_action = T.clamp(next_action, self.min_action[0], self.max_action[0])
             # Compute the target Q value
             target_Q1, target_Q2 = self.target_critic(new_state, next_action)
             target_Q = T.min(target_Q1, target_Q2)
