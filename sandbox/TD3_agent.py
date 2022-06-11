@@ -49,7 +49,7 @@ class TD3_agent(object):
         mu_prime = mu + T.tensor(np.random.normal(scale=self.noise),
                 dtype=T.float).to(self.device)
         mu_prime = T.clamp(mu_prime, self.min_action[0], self.max_action[0])
-        self.count += 1
+        self.action_count += 1
         return mu_prime.cpu().detach().numpy()
 
         self.actor.eval()
