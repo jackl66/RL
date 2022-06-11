@@ -42,7 +42,7 @@ class TD3_agent(object):
 
 
         if self.action_count < self.warmup:
-            mu = T.tensor(np.random.normal(scale=self.noise, size=(self.n_actions,)))
+            mu = T.tensor(np.random.normal(scale=self.noise, size=(self.n_actions,))).to(self.device)
         else:
             state = T.tensor(observation, dtype=T.float).to(self.device)
             mu = self.actor.forward(state).to(self.device)
