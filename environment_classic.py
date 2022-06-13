@@ -680,7 +680,7 @@ class classic_coppelia:
         #     np.save(f, np.array(self.action_history3))
         # plt.savefig(path)
         # plt.show()
-        return self.num_outlier
+        return self.num_outlier,0
 
     def get_reward_history(self):
         return self.reward_history
