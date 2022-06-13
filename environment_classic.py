@@ -516,25 +516,20 @@ class classic_coppelia:
                 actions[0] = 0
             elif (10 > episode > 7 and not self.eval) or self.eval:
                 actions[0] /= 10
-                # move the end effector to target position,
-                # for 1D models, action's shape (1,) = (displacement_y)
-                # for 2D models, action's shape (2,) = (displacement_y, delta v)
-                if len(actions) == 1:
-                    penalty = self.py_moveToPose([actions, 0], 1)
-                else:
-                    penalty = self.py_moveToPose([actions[0], 0], 1)
-
-                    if position6 < -1:
-                        D_speed = actions[1]
-                        self.pouring_speed += D_speed
-
-                # wait for the arm to reach the target position
-                force_out = 0  # exception handler
-                while (abs(self.old_y - self.new_pose[0]) > 0.005
-                       or abs(self.old_z - self.new_pose[1]) > 0.005) and force_out < 20:
-                    self.triggerSim()
-                    force_out += 1
-                    self.py_get_pose()
+            # move the end effector to target position,
+            # for 1D models, action's shape (1,) = (displacement_y)
+            # for 2D models, action's shape (2,) = (displacement_y, delta v)
+            if len(actions) == 1:
+                penalty = self.py_moveToPose([actions, 0], 1)
+            else:
+                penalty = self.py_moveToPose([actions[0], 0], 1)
+            # wait for the arm to reach the target position
+            force_out = 0  # exception handler
+            while (abs(self.old_y - self.new_pose[0]) > 0.005
+                    or abs(self.old_z - self.new_pose[1]) > 0.005) and force_out < 20:
+                self.triggerSim()
+                force_out += 1
+                self.py_get_pose()
             errorCode = sim.simxSetJointTargetVelocity(self.clientID, self.joint6, self.pouring_speed,
                                                        sim.simx_opmode_oneshot)
             self.triggerSim()

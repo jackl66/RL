@@ -663,38 +663,17 @@ class sin_coppelia:
                 self.num_pour_out = round(total_weight / self.single_block_weight)
 
                 # if we have any outlier
-                # if outlier_weight > 0:
-                #     self.num_outlier = round(outlier_weight / self.single_block_weight)
-                #     # at least we don't want impossible number
-                #     if self.num_outlier > self.num_pour_out:
-                #         self.num_outlier = self.num_pour_out
-                #     outlier_penalty = self.num_outlier * 20
-                #     self.reward_history[4] -= outlier_penalty
-
-                # # if we have anything in the target area
-                # if self.num_pour_out > self.num_outlier:
-                #     hit_reward = (self.num_pour_out - self.num_outlier) * 10
-                #     self.reward_history[5] += hit_reward
-
-                #     if self.num_outlier / self.num_pour_out < 0.05:
-                #         hit_reward += 100
-                #         self.reward_history[6] += 100
-                # self.final_reward = True
-                # reward = reward + hit_reward - outlier_penalty
-
-                # if we have any outlier
                 if outlier_weight > 0:
                     self.num_outlier = round(outlier_weight / self.single_block_weight)
                     # at least we don't want impossible number
                     if self.num_outlier > self.num_pour_out:
                         self.num_outlier = self.num_pour_out
-                    # here we use percentage as the penalty
-                    outlier_penalty = outlier_weight / total_weight * 10000
+                    outlier_penalty = self.num_outlier * 20
                     self.reward_history[4] -= outlier_penalty
 
                 # if we have anything in the target area
                 if self.num_pour_out > self.num_outlier:
-                    hit_reward = (1 - outlier_weight / total_weight) * 20000
+                    hit_reward = (self.num_pour_out - self.num_outlier) * 10
                     self.reward_history[5] += hit_reward
 
                     if self.num_outlier / self.num_pour_out < 0.05:
@@ -702,6 +681,27 @@ class sin_coppelia:
                         self.reward_history[6] += 100
                 self.final_reward = True
                 reward = reward + hit_reward - outlier_penalty
+
+                # if we have any outlier
+                # if outlier_weight > 0:
+                #     self.num_outlier = round(outlier_weight / self.single_block_weight)
+                #     # at least we don't want impossible number
+                #     if self.num_outlier > self.num_pour_out:
+                #         self.num_outlier = self.num_pour_out
+                #     # here we use percentage as the penalty
+                #     outlier_penalty = outlier_weight / total_weight * 10000
+                #     self.reward_history[4] -= outlier_penalty
+
+                # # if we have anything in the target area
+                # if self.num_pour_out > self.num_outlier:
+                #     hit_reward = (1 - outlier_weight / total_weight) * 20000
+                #     self.reward_history[5] += hit_reward
+
+                #     if self.num_outlier / self.num_pour_out < 0.05:
+                #         hit_reward += 100
+                #         self.reward_history[6] += 100
+                # self.final_reward = True
+                # reward = reward + hit_reward - outlier_penalty
                 print("done is", self.done)
         # we want to make the final reward before termination
         done = self.done * self.final_reward
