@@ -4,7 +4,7 @@ from TD3_network import *
 
 class TD3_agent(object):
     def __init__(self, alpha, beta, input_dims, tau, env, token,
-                 gamma=0.99, update_freq=2, n_actions=2, max_size=1000000,  batch_size=100, idx='0', eval = 0):
+                 gamma=0.99, update_freq=2, n_actions=2, max_size=1000000, batch_size=100, idx='0', eval=0):
         self.gamma = gamma
         self.tau = tau
         self.max_action = env.action_space.high
@@ -15,7 +15,7 @@ class TD3_agent(object):
         self.update_freq = update_freq
         self.action_count = 0
         self.learning_count = 0
-        self.warmup =1000
+        self.warmup = 1000
         cuda_idx = 'cuda:' + idx
         self.device = T.device(cuda_idx if T.cuda.is_available() else 'cpu')
         chkpt_dir = './checkpoint/' + str(token)
@@ -35,11 +35,10 @@ class TD3_agent(object):
                                            'TargetCritic', chkpt_dir=chkpt_dir, device=self.device)
 
         # self.noise = OUActionNoise(mu=np.zeros(n_actions))
-        self.noise = 0.1 
+        self.noise = 0.1
         self.update_network_parameters(tau=1)
 
     def choose_action(self, observation):
-
 
         if self.action_count < self.warmup:
             mu = T.tensor(np.random.normal(scale=self.noise, size=(self.n_actions,))).to(self.device)
@@ -47,7 +46,7 @@ class TD3_agent(object):
             state = T.tensor(observation, dtype=T.float).to(self.device)
             mu = self.actor.forward(state).to(self.device)
         mu_prime = mu + T.tensor(np.random.normal(scale=self.noise),
-                dtype=T.float).to(self.device)
+                                 dtype=T.float).to(self.device)
         mu_prime = T.clamp(mu_prime, self.min_action[0], self.max_action[0])
         self.action_count += 1
         return mu_prime.cpu().detach().numpy()
@@ -88,8 +87,8 @@ class TD3_agent(object):
             #     clamp(-self.noise_clip, self.noise_clip)
             next_action = self.target_actor.forward(new_state)
             next_action = next_action + \
-                T.clamp(T.tensor(np.random.normal(scale=0.2)), -0.5, 0.5)
-             # might break if elements of min and max are not all equal
+                          T.clamp(T.tensor(np.random.normal(scale=0.2)), -0.5, 0.5)
+            # might break if elements of min and max are not all equal
             next_action = T.clamp(next_action, self.min_action[0], self.max_action[0])
             # Compute the target Q value
             target_Q1, target_Q2 = self.target_critic(new_state, next_action)
@@ -104,7 +103,7 @@ class TD3_agent(object):
         current_Q1, current_Q2 = self.critic(state, action)
         # Compute critic loss
         critic_loss = F.mse_loss(current_Q1, target_Q) + F.mse_loss(current_Q2, target_Q)
-
+        # todo change to seperate networks for all agents
         # Optimize the critic
         self.critic.train()
         self.critic.optimizer.zero_grad()

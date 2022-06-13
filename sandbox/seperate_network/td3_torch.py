@@ -21,6 +21,8 @@ class Agent():
         self.warmup = warmup
         self.n_actions = n_actions
         self.update_actor_iter = update_actor_interval
+        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        self.mask = T.ones(self.batch_size).to(self.device)
 
         self.actor = ActorNetwork(alpha, input_dims, layer1_size,
                                   layer2_size, n_actions=n_actions,
@@ -85,15 +87,19 @@ class Agent():
         q1 = self.critic_1.forward(state, action)
         q2 = self.critic_2.forward(state, action)
 
-        q1_[done] = 0.0
-        q2_[done] = 0.0
-
-        q1_ = q1_.view(-1)
-        q2_ = q2_.view(-1)
+        # q1_[done] = 0.0
+        # q2_[done] = 0.0
+        #
+        # q1_ = q1_.view(-1)
+        # q2_ = q2_.view(-1)
+        masked = T.sub(self.mask, done)
+        masked = T.reshape(masked, (self.batch_size, 1))
+        reward = T.reshape(reward, (self.batch_size, 1))
 
         critic_value_ = T.min(q1_, q2_)
+        target = reward + masked * self.gamma * critic_value_
 
-        target = reward + self.gamma*critic_value_
+        # target = reward + self.gamma*critic_value_
         target = target.view(self.batch_size, 1)
 
         self.critic_1.optimizer.zero_grad()

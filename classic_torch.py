@@ -42,11 +42,11 @@ args = parser.parse_args()
 # alpha = float(args.alpha)
 # beta = float(args.beta)
 # batch_size=int(args.batch)
-# network_type=int(args.cnn)
-alpha = 0.000025
-beta = 0.00025
+
+alpha = 0.001
+beta = 0.001
 batch_size = 64
-network_type = 0
+tau = 0.005
 gamma = float(args.discount)
 depth = int(args.depth)
 port = int(args.port)
@@ -61,19 +61,19 @@ sin = args.sin
 if model == 0:
     token = '1652364862'
     if depth == 0:
-        agent = DDPG_Agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
+        agent = DDPG_Agent(alpha=alpha, beta=beta, input_dims=[5], tau=tau, gamma=gamma,
                            batch_size=batch_size, n_actions=1, token=token, update_freq=update_freq, idx=idx, eval=eval)
     if depth == 1:
-        agent = Vision_Agent(alpha=alpha, beta=beta, input_dims=[4], tau=0.001, gamma=gamma,
+        agent = Vision_Agent(alpha=alpha, beta=beta, input_dims=[4], tau=tau, gamma=gamma,
                              batch_size=batch_size, n_actions=3, token=token, update_freq=update_freq, idx=idx,
                              eval=eval)
 elif model == 1:
-    # token = '1653859293'
+    # token = 'sin1654819781'
     if depth == 0:
-        agent = TD3_agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
+        agent = TD3_agent(alpha=alpha, beta=beta, input_dims=[5], tau=tau, gamma=gamma,
                           batch_size=batch_size, n_actions=1, token=token, update_freq=update_freq, idx=idx, eval=eval)
     if depth == 1:
-        agent = Vision_td3_Agent(alpha=alpha, beta=beta, input_dims=[4], tau=0.001, gamma=gamma,
+        agent = Vision_td3_Agent(alpha=alpha, beta=beta, input_dims=[4], tau=tau, gamma=gamma,
                                  batch_size=batch_size, n_actions=3, token=token, update_freq=update_freq, idx=idx,
                                  eval=eval)
 
@@ -81,25 +81,25 @@ elif model == 2:
     # token='1642625149'
 
     if depth == 0:
-        agent = DQN_agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
+        agent = DQN_agent(alpha=alpha, beta=beta, input_dims=[5], tau=tau, gamma=gamma,
                           batch_size=batch_size, n_actions=3, token=token, update_freq=update_freq, idx=idx, eval=eval)
     if depth == 1:
-        agent = Vision_DQN_agent(alpha=alpha, beta=beta, input_dims=[4], tau=0.001, gamma=gamma,
+        agent = Vision_DQN_agent(alpha=alpha, beta=beta, input_dims=[4], tau=tau, gamma=gamma,
                                  batch_size=batch_size, n_actions=27, token=token, update_freq=update_freq, idx=idx,
                                  eval=eval)
 elif model == 3:
     # token = '1649383425'
 
-    agent = TD3_speed_agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
+    agent = TD3_speed_agent(alpha=alpha, beta=beta, input_dims=[5], tau=tau, gamma=gamma,
                             batch_size=batch_size, n_actions=2, token=token, update_freq=update_freq, idx=idx,
                             eval=eval)
 elif model == 4:
-    agent = s_Agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
+    agent = s_Agent(alpha=alpha, beta=beta, input_dims=[5], tau=tau, gamma=gamma,
                     batch_size=batch_size, n_actions=2, token=token, update_freq=update_freq, idx=idx,
                     eval=eval)
 
 elif model == 5:
-    agent = mul_agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
+    agent = mul_agent(alpha=alpha, beta=beta, input_dims=[5], tau=tau, gamma=gamma,
                       batch_size=batch_size, n_actions=3, token=token, update_freq=update_freq, idx=idx,
                       eval=eval)
 elif model == 6:
@@ -108,7 +108,7 @@ elif model == 6:
                       ppo_update_eps=update_freq, idx=idx, eval=eval)
     # agent = Agent2(3,5)
 else:
-    agent = DQN_s_agent(alpha=alpha, beta=beta, input_dims=[5], tau=0.001, gamma=gamma,
+    agent = DQN_s_agent(alpha=alpha, beta=beta, input_dims=[5], tau=tau, gamma=gamma,
                         batch_size=batch_size, n_actions=9, token=token, update_freq=update_freq, idx=idx, eval=eval)
 
 # start coppelia connection

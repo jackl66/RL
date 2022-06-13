@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 import sim
 import numpy as np
 import torch as T
@@ -96,7 +98,7 @@ class sin_coppelia:
                             [-0.0130329799471479, -0.0359688442764861], [-0.0131965924393047, -0.0297948994419791],
                             [-0.0128810468948249, -0.0373327018636646], [-0.0136431304794369, -0.03255832213344]]
         self.time = np.arange(0, 127 * 4)
-
+        self.right_shift = -0.1
         self.period_adjustor = [[1.43, 1.45, 1.49], [1.39, 1.41, 1.43], [1.27, 1.29, 1.31], [1.15, 1.17, 1.19]]
         self.sin = [[0.83, -1.2], [0.73, -1], [0.63, -0.8], [0.53, -0.6]]
 
@@ -105,7 +107,8 @@ class sin_coppelia:
         self.done = False
         self.final_reward = False
         self.weight_history = []
-
+        # self.a_history = []
+        # self.y_history = []
         # if we want to evaluate the model
         # use a different set of sizes
         if self.eval and self.same == 1:
@@ -137,7 +140,7 @@ class sin_coppelia:
         self.target_container_right_rim = -9.6500e-01 - (1.5007e-01) / 2 * self.width_scale
         self.target_container_rim_hight = +5.1949e-01 + (
             8.0195e-02) / 2 * self.width_scale + 9.4118e-02 * self.height_scale
-        # the offset to move the cup in order to make it that rim to rim
+        # the distance between the center and the rim of the target container
         self.original_y_offset = -0.085 * self.width_scale
 
         # construct different sin wave velocity
@@ -169,7 +172,7 @@ class sin_coppelia:
             pouring_idx = self.velocity_pool.index(amp)
         else:
             pouring_idx = 0
-        self.large_velocity_bound = 0.01 * (5 - amp_idx + num_object) + 0.005 - 0.02
+        self.large_velocity_bound = 0.01 * (5 - amp_idx + num_object) + 0.005
 
         # the offset is the maximum offset it can go
         # but since the velocity is much slower than the max for the most of the time
@@ -193,7 +196,7 @@ class sin_coppelia:
         self.bound = np.array(
             [self.target_container_left_rim + 0.1 + (1.5007e-01) * 0.5 * (1 - self.width_scale),
              self.target_container_left_rim + self.large_velocity_bound, 0.66901, 0.85954])
-
+        print(self.target_container_left_rim + self.large_velocity_bound)
         self.clientID = sim.simxStart('127.0.0.1', self.port, True, True, 5000, 5)
 
         if self.clientID != -1:
@@ -538,6 +541,8 @@ class sin_coppelia:
         # use median filter to reduce the force reading noise
         outlier_reading = []
         total_reading = []
+        # self.y_history.append(self.old_y)
+        # self.a_history.append(actions)
         if not self.done:
             # print(self.old_y, (self.old_y - self.target_container_left_rim))
 
@@ -711,7 +716,15 @@ class sin_coppelia:
         x = sim.simxStopSimulation(self.clientID, sim.simx_opmode_blocking)
         sim.simxFinish(self.clientID)
         print('took', self.iteration)
-
+        # print(max(self.y_history[30:]) - min(self.y_history[30:]))
+        #
+        # plt.plot(self.y_history, '.')
+        # plt.title('y history')
+        # plt.show()
+        #
+        # plt.plot(self.a_history, '.')
+        # plt.title('action history')
+        # plt.show()
         return self.num_outlier, self.num_pour_out
 
     def get_reward_history(self):

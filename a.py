@@ -2,8 +2,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import argparse
- 
- 
+import torch as T
+
+g = T.ones(4)
+a = T.tensor([0,1,1,0])
+t = T.sub(g,a)
+print(g)
+print(a)
+print(t)
+exit()
+
 # avg_out = np.zeros((240, 2))
 # print(avg_out.shape)
 # print(avg_out[:2])
