@@ -158,7 +158,7 @@ class classic_coppelia:
 
         # # todo 0.01 diff between 1.40 and 1.48
 
-        y_displacement -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.005
+        y_displacement -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.002
 
         print(f'v {self.pouring_speed}, h {height}, old h {old_height}, offset {y_displacement}, old y {old_y},',
               f'shrink factor {self.width_scale}, height scale {self.height_scale}, num obj {self.num_object}')
@@ -547,7 +547,7 @@ class classic_coppelia:
             # make sure everything setting down before we read outliers
             temp = 0
             while temp < 50:
-                if temp < 30:
+                if temp > 10:
                     ret, state, forceVector2, torqueVector = sim.simxReadForceSensor(self.clientID, self.target,
                                                                                      sim.simx_opmode_buffer)
                     outlier_reading.append(forceVector2[2])
@@ -594,7 +594,7 @@ class classic_coppelia:
 
         # time out penalty
         self.iteration += 1
-        if self.iteration > 150:
+        if self.iteration > 180:
             self.done = True
             print('took too long')
             reward -= 200
