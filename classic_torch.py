@@ -43,9 +43,9 @@ args = parser.parse_args()
 # beta = float(args.beta)
 # batch_size=int(args.batch)
 
-alpha = 0.001
-beta = 0.001
-batch_size = 64
+alpha = 0.0001
+beta = 0.0001
+batch_size = 100
 tau = 0.005
 gamma = float(args.discount)
 depth = int(args.depth)
@@ -59,7 +59,7 @@ sin = args.sin
 # same = args.same
 
 if model == 0:
-    token = '1652364862'
+    token = '1652'
     if depth == 0:
         agent = DDPG_Agent(alpha=alpha, beta=beta, input_dims=[5], tau=tau, gamma=gamma,
                            batch_size=batch_size, n_actions=1, token=token, update_freq=update_freq, idx=idx, eval=eval)
@@ -68,7 +68,7 @@ if model == 0:
                              batch_size=batch_size, n_actions=3, token=token, update_freq=update_freq, idx=idx,
                              eval=eval)
 elif model == 1:
-    # token = 'sin1654819781'
+    #token = '1655215430'
     if depth == 0:
         agent = TD3_agent(alpha=alpha, beta=beta, input_dims=[5], tau=tau, gamma=gamma,
                           batch_size=batch_size, n_actions=1, token=token, update_freq=update_freq, idx=idx, eval=eval)
@@ -126,7 +126,7 @@ actor_loss_history = []
 critic_loss_history = []
 outlier_history = []
 pour_out_bins = []
-patient = 200
+patient = 300
 warm_up = 20
 best_score = -1000
 best_episode = 90
@@ -165,8 +165,8 @@ for i in range(1000):
 
     obs = env.reset(mypot, obj_shape, size)
 
-    if eval:
-        agent.noise.reset()
+    #if eval:
+    #    agent.noise.reset()
 
     done = False
     score = 0
