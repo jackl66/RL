@@ -52,7 +52,7 @@ class TD3_agent(object):
 
     def choose_action(self, observation, ratio):
         self.actor.eval()
-        if self.action_count < self.warmup:
+        if self.action_count < self.warmup and not self.eval:
             mu = T.tensor(np.random.normal(scale=self.noise, size=(self.n_actions,))).to(self.device)
         else:
             observation1 = observation[:-1]
