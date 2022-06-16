@@ -159,15 +159,19 @@ class classic_coppelia:
         # # todo 0.01 diff between 1.40 and 1.48
 
         y_displacement -= (1.5007e-01) * 0.5 * (1 - self.width_scale) + 0.002
-
+        self.old_bound = y_displacement
         print(f'v {self.pouring_speed}, h {height}, old h {old_height}, offset {y_displacement}, old y {old_y},',
               f'shrink factor {self.width_scale}, height scale {self.height_scale}, num obj {self.num_object}')
 
         # update the bound based on the scale
-        self.bound = np.array(
-            [self.target_container_left_rim + abs(y_displacement) + 0.02 + (1.5007e-01) * 0.5 * (1 - self.width_scale),
-             self.target_container_left_rim + 0.005, 0.66901, 0.85954])
+        # self.bound = np.array(
+        #     [self.target_container_left_rim + abs(y_displacement) + 0.02 + (1.5007e-01) * 0.5 * (1 - self.width_scale),
+        #      self.target_container_left_rim + 0.005, 0.66901, 0.85954])
 
+        # increase the size of boundary
+        self.bound = np.array(
+            [self.target_container_left_rim + 0.2,
+             self.target_container_left_rim - 0.1, 0.66901, 0.85954])
         self.clientID = sim.simxStart('127.0.0.1', self.port, True, True, 5000, 5)
 
         if self.clientID != -1:
@@ -232,7 +236,7 @@ class classic_coppelia:
         # move the arm to target height
         # and stay there for this episode
         self.py_get_pose()
-        self.py_moveToPose([y_displacement, height], 0)
+        self.py_moveToPose([999, height], 0)
         loop = 20
         while loop > 0:
             self.triggerSim()
@@ -348,10 +352,15 @@ class classic_coppelia:
 
     # call Lua script to control the end-effector
     def py_moveToPose(self, displacement, hold_z):
-
         penalty = 0
-        # see ddpg_torch.py choose_action() for more info
-        self.new_pose[0] = self.old_y + displacement[0]
+
+        if displacement[0] ==999:
+            self.new_pose[0] = self.target_container_left_rim + abs(self.old_bound) + 0.02 \
+                             + (1.5007e-01) * 0.5 * (1 - self.width_scale)
+
+        else:
+            # see ddpg_torch.py choose_action() for more info
+            self.new_pose[0] = self.old_y + displacement[0]
         # print(self.old_y, self.new_pose, self.bound[0])
         self.new_pose[1] = self.old_z + displacement[1]
 
@@ -404,7 +413,7 @@ class classic_coppelia:
         return penalty
 
     def step(self, actions, episode=0):
-        actions /= 100
+        actions /= 10
         ret, error = sim.simxGetFloatSignal(self.clientID, 'exception', sim.simx_opmode_blocking)
         if error == 99:
             self.init_error += 1
@@ -514,15 +523,14 @@ class classic_coppelia:
         if not self.done:
             if episode < 7 and not self.eval:
                 actions[0] = 0
-            elif (10 > episode > 7 and not self.eval) or self.eval:
-                actions[0] /= 10
+            # elif (10 > episode > 7 and not self.eval) or self.eval:
+            #     actions[0] /= 10
             # move the end effector to target position,
             # for 1D models, action's shape (1,) = (displacement_y)
             # for 2D models, action's shape (2,) = (displacement_y, delta v)
-            if len(actions) == 1:
-                penalty = self.py_moveToPose([actions, 0], 1)
-            else:
-                penalty = self.py_moveToPose([actions[0], 0], 1)
+
+            penalty = self.py_moveToPose([actions[0], 0], 1)
+
             # wait for the arm to reach the target position
             force_out = 0  # exception handler
             while (abs(self.old_y - self.new_pose[0]) > 0.005

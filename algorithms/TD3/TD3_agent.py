@@ -16,7 +16,7 @@ class TD3_agent(object):
 
         cuda_idx = 'cuda:' + idx
         self.device = T.device(cuda_idx if T.cuda.is_available() else 'cpu')
-        chkpt_dir = './checkpoint/td3/' + str(token)
+        chkpt_dir = './checkpoint/td3/se_net/' + str(token)
         self.noise_clip = 0.004
         self.action_count = 0
         self.learning_count = 0

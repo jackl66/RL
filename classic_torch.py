@@ -146,7 +146,7 @@ if eval:
     agent.load_models()
     # token += same
 
-np.random.seed()
+# np.random.seed()
 
 for i in range(1000):
     # random initial amount and shape/size
